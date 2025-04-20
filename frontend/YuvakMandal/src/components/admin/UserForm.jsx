@@ -159,6 +159,8 @@ const UserForm = ({ user, onClose }) => {
               <option value="Pradhan">Pradhan</option>
               <option value="Secretary">Secretary</option>
               <option value="Treasurer">Treasurer</option>
+              <option value="Chief Advisor">Chief Advisor</option>
+              <option value="Advisor">Advisor</option>
               <option value="Core Member">Core Member</option>
               <option value="Other Member">Other Member</option>
             </select>
