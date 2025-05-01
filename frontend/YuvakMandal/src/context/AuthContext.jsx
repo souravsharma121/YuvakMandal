@@ -105,6 +105,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Guest Login
+  const guestLogin = () => {
+    const guestUser = {
+      _id: 'guest-user',
+      name: 'Guest User',
+      role: 'Guest',
+      isGuest: true
+    };
+  
+    // Create a mock token for the guest user
+    const guestToken = 'guest-token';
+    
+    // Set token in local storage using the SAME key as regular users
+    localStorage.setItem('x-token', guestToken);
+    setAuthToken(guestToken);
+  
+    // Dispatch user loaded instead of login success
+    dispatch({
+      type: 'USER_LOADED',
+      payload: guestUser
+    });
+    
+    // Also dispatch login success to set token and isAuthenticated
+    dispatch({
+      type: 'LOGIN_SUCCESS',
+      payload: {
+        token: guestToken
+      }
+    });
+  };
+
   // Login user
 const login = async (mobileNumber, password) => {
   const config = {
@@ -196,6 +227,18 @@ const deleteUser = async (userId) => {
   }
 };
 
+// Add a new user
+const addUser = async (userData) => {
+  try {
+    const res = await axios.post(`${baseURL}/api/users`, userData);
+    
+    return res.data;
+  } catch (err) {
+    console.error('Error creating user:', err);
+    throw err;
+  }
+};
+
   // Load user on initial render if token exists
   useEffect(() => {
     const initializeAuth = async () => {
@@ -224,7 +267,9 @@ const deleteUser = async (userId) => {
         clearError,
         getAllUsers, 
         deleteUser,
-        updateUser
+        addUser,
+        updateUser,
+        guestLogin
       }}
     >
       {children}

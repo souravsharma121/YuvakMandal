@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 // Create context
 const AlertContext = createContext();
 
 // Initial state
 const initialState = {
-  alerts: []
+  alerts: [],
+  timeouts: {} // Track timeouts to clear them when needed
 };
 
 // Generate unique ID
@@ -17,12 +18,26 @@ const alertReducer = (state, action) => {
     case 'SET_ALERT':
       return {
         ...state,
-        alerts: [...state.alerts, { ...action.payload, id: generateID() }]
+        alerts: [...state.alerts, { ...action.payload, id: action.payload.id }],
+        timeouts: { 
+          ...state.timeouts, 
+          [action.payload.id]: action.payload.timeoutId 
+        }
       };
     case 'REMOVE_ALERT':
+      const newTimeouts = { ...state.timeouts };
+      delete newTimeouts[action.payload];
+      
       return {
         ...state,
-        alerts: state.alerts.filter(alert => alert.id !== action.payload)
+        alerts: state.alerts.filter(alert => alert.id !== action.payload),
+        timeouts: newTimeouts
+      };
+    case 'CLEAR_ALL_ALERTS':
+      return {
+        ...state,
+        alerts: [],
+        timeouts: {}
       };
     default:
       return state;
@@ -33,35 +48,67 @@ const alertReducer = (state, action) => {
 export const AlertProvider = ({ children }) => {
   const [state, dispatch] = useReducer(alertReducer, initialState);
 
-  // Set alert
-  const setAlert = (message, type = 'info', timeout = 5000) => {
-    const id = generateID();
-    dispatch({
-      type: 'SET_ALERT',
-      payload: { message, type, id }
-    });
+  // Clear all timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(state.timeouts).forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+    };
+  }, [state.timeouts]);
 
-    // Auto dismiss after timeout
-    setTimeout(() => {
+  // Set alert
+  const setAlert = (message, type = 'info', timeout = 1500) => {
+    const id = generateID();
+    
+    // Create timeout and store its ID
+    const timeoutId = setTimeout(() => {
       dispatch({
         type: 'REMOVE_ALERT',
         payload: id
       });
     }, timeout);
     
+    dispatch({
+      type: 'SET_ALERT',
+      payload: { message, type, id, timeoutId }
+    });
+    
     return id;
   };
 
   // Remove alert
   const removeAlert = (id) => {
+    // Clear the timeout associated with this alert
+    if (state.timeouts[id]) {
+      clearTimeout(state.timeouts[id]);
+    }
+    
     dispatch({
       type: 'REMOVE_ALERT',
       payload: id
     });
   };
 
+  // Clear all alerts
+  const clearAllAlerts = () => {
+    // Clear all timeouts
+    Object.values(state.timeouts).forEach(timeoutId => {
+      clearTimeout(timeoutId);
+    });
+    
+    dispatch({
+      type: 'CLEAR_ALL_ALERTS'
+    });
+  };
+
   return (
-    <AlertContext.Provider value={{ alerts: state.alerts, setAlert, removeAlert }}>
+    <AlertContext.Provider value={{ 
+      alerts: state.alerts, 
+      setAlert, 
+      removeAlert,
+      clearAllAlerts
+    }}>
       {children}
     </AlertContext.Provider>
   );

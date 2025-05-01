@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
+import SkeletonLoader from '../loader/SkeletonLoader';
 
 const NotificationList = () => {
   const { notifications, loading, getNotifications, deleteNotification } = useNotification();
@@ -8,7 +9,6 @@ const NotificationList = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
-  
   useEffect(() => {
     getNotifications();
   }, []);
@@ -55,11 +55,19 @@ const NotificationList = () => {
       (notification.createdBy && notification.createdBy._id === user._id)
     );
   };
-  
+
+
   if (loading && notifications.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="p-6">
+        <SkeletonLoader type="text" size="lg" className="mb-6" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <SkeletonLoader type="dashboard-card" count={3} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <SkeletonLoader type="dashboard-card" count={3} />
+        </div>
       </div>
     );
   }

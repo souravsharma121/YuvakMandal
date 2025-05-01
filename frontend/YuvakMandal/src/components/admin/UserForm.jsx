@@ -145,7 +145,7 @@ const UserForm = ({ user, onClose }) => {
           
           <div className="md:col-span-2">
             <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-              Role *
+            Designation *
             </label>
             <select
               id="role"

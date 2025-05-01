@@ -157,6 +157,34 @@ export const ContributionProvider = ({ children }) => {
     }
   };
 
+  // Add contribution as admin/treasurer for another user
+const addMemberContribution = async (contributionData) => {
+  const config = {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+
+  dispatch({ type: 'SET_LOADING' });
+  
+  try {
+    const res = await axios.post(`${baseURL}/api/contributions/admin-add`, contributionData, config);
+    dispatch({
+      type: 'ADD_CONTRIBUTION',
+      payload: res.data
+    });
+    setAlert('Contribution added successfully', 'success');
+    return true;
+  } catch (err) {
+    dispatch({
+      type: 'CONTRIBUTION_ERROR',
+      payload: err.response?.data?.message || 'Failed to add contribution'
+    });
+    setAlert(err.response?.data?.message || 'Failed to add contribution', 'danger');
+    return false;
+  }
+};
+
   // Update contribution status
   const updateContributionStatus = async (id, status, notes) => {
     const config = {
@@ -197,7 +225,8 @@ export const ContributionProvider = ({ children }) => {
         getUserContributions,
         getMonthlyContributions,
         addContribution,
-        updateContributionStatus
+        updateContributionStatus,
+        addMemberContribution
       }}
     >
       {children}

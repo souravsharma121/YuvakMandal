@@ -4,6 +4,7 @@ const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const bcrypt = require('bcryptjs'); // Add this import for password hashing
 
 // Get all users (admin only)
 router.get('/', auth, async (req, res) => {
@@ -44,7 +45,7 @@ router.post('/', auth, adminAuth, async (req, res) => {
     }
     
     // Check if role is unique (Pradhan, Secretary, Treasurer)
-    if (['Pradhan', 'Up Pradhan', 'Secretary', 'Treasurer', 'Chief Advisor',].includes(role)) {
+    if (['Pradhan', 'Up Pradhan', 'Secretary', 'Treasurer', 'Chief Advisor'].includes(role)) {
       const existingRoleUser = await User.findOne({ role });
       if (existingRoleUser) {
         return res.status(400).json({ message: `A ${role} already exists` });
@@ -54,7 +55,7 @@ router.post('/', auth, adminAuth, async (req, res) => {
     user = new User({
       name,
       mobileNumber,
-      password,
+      password: password,
       villageName,
       role
     });
@@ -80,40 +81,42 @@ router.post('/', auth, adminAuth, async (req, res) => {
 // Update user (admin only)
 router.put('/:id', auth, adminAuth, async (req, res) => {
   try {
-    const { name, mobileNumber, villageName, role } = req.body;
+    const { name, mobileNumber, villageName, role, password } = req.body;
     
-    // Find user by ID
     let user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     // Check if mobile number already exists for another user
     if (mobileNumber !== user.mobileNumber) {
       const existingUser = await User.findOne({ mobileNumber });
-      if (existingUser) {
+      if (existingUser && existingUser._id.toString() !== req.params.id) {
         return res.status(400).json({ message: 'User with this mobile number already exists' });
       }
     }
-    
-    // Check if role is unique (Pradhan, Secretary, Treasurer)
-    if (['Pradhan', 'Secretary', 'Treasurer'].includes(role) && role !== user.role) {
+
+    // Check if role is unique (Pradhan, Up Pradhan, Secretary, Treasurer, Chief Advisor)
+    if (
+      ['Pradhan', 'Up Pradhan', 'Secretary', 'Treasurer', 'Chief Advisor'].includes(role) &&
+      role !== user.role
+    ) {
       const existingRoleUser = await User.findOne({ role });
-      if (existingRoleUser) {
+      if (existingRoleUser && existingRoleUser._id.toString() !== req.params.id) {
         return res.status(400).json({ message: `A ${role} already exists` });
       }
     }
-    
-    // Update user
+
+    // Update fields
     user.name = name || user.name;
     user.mobileNumber = mobileNumber || user.mobileNumber;
     user.villageName = villageName || user.villageName;
     user.role = role || user.role;
+    user.password = password;
     user.updatedAt = Date.now();
-    
     await user.save();
-    
-    res.json({ 
+
+    res.json({
       message: 'User updated successfully',
       user: {
         id: user._id,

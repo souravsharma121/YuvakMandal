@@ -1,8 +1,8 @@
-// src/components/admin/UserManagement.jsx
 import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../../context/AuthContext';
 import AlertContext from '../../context/AlertContext';
 import UserForm from './UserForm';
+import SkeletonLoader from '../loader/SkeletonLoader';
 
 const UserManagement = () => {
   const { getAllUsers, deleteUser } = useContext(AuthContext);
@@ -10,19 +10,24 @@ const UserManagement = () => {
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Add this line
+
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoading(true); // Set loading to true before fetching
       try {
         const users = await getAllUsers();
         setUsers(users);
       } catch (error) {
         console.error('Failed to fetch users:', error);
+      } finally {
+        setIsLoading(false); // Set loading to false after fetching
       }
     };
   
     fetchUsers();
     // eslint-disable-next-line
-  }, []);  
+  }, []); 
   
   const handleAddUser = () => {
     setEditingUser(null);
@@ -45,6 +50,25 @@ const UserManagement = () => {
       setAlert('User deleted successfully', 'success');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <SkeletonLoader type="text" size="lg" className="mb-6" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <SkeletonLoader type="dashboard-card" count={3} />
+        </div>
+        
+        <div className="mt-10">
+          <SkeletonLoader type="text" size="lg" className="mb-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <SkeletonLoader type="user-card" count={4} />
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="p-6">
@@ -81,7 +105,7 @@ const UserManagement = () => {
                 Village
               </th>
               <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
+              Designation
               </th>
               <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions

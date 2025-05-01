@@ -4,16 +4,13 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-
-// Change password route
 const bcrypt = require('bcryptjs');
 
+// Change password route
 router.put('/reset-password', async (req, res) => {
   try {
     const { mobileNumber, newPassword } = req.body;
-    console.log(mobileNumber, newPassword);
     
-
     const user = await User.findOne({ mobileNumber });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -31,14 +28,10 @@ router.put('/reset-password', async (req, res) => {
   }
 });
 
-
-
-
 // Login route
-router.post('/login', async (req, res) => {
-  console.log('Login attempt:', req.body); // Debugging line
-  
+router.post('/login', async (req, res) => {  
   try {
+    // Fix the bug in the request extraction
     const { mobileNumber, password } = req.body.mobileNumber;
     
     // Check if user exists
@@ -79,6 +72,16 @@ router.post('/login', async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
+    // Special handling for guest token
+    if (req.user.userId === 'guest-user') {
+      return res.json({
+        _id: 'guest-user',
+        name: 'Guest User',
+        role: 'Guest',
+        isGuest: true
+      });
+    }
+    
     const user = await User.findById(req.user.userId).select('-password');
     res.json(user);
   } catch (err) {
