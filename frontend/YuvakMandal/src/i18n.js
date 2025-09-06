@@ -97,7 +97,23 @@ const resources = {
             "monthlyForecastDescription": "Monthly forecast based on available 5-day forecast data. This is an estimation and should be used as a general guide only.",
             "sunrise": "Sunrise",
             "sunset": "Sunset",
-            "coordinates": "Coordinates"
+            "coordinates": "Coordinates",
+            "gallery": "Gallery",
+            "addGalleryItem": "Add Gallery Item",
+            "title": "Title",
+            "description": "Description",
+            "images": "Images",
+            "clickToUpload": "Click to upload",
+            "jpgPngGif": "JPG, PNG or GIF files only",
+            "cancel": "Cancel",
+            "submit": "Submit",
+            "addNew": "Add New",
+            "noGalleryItems": "No gallery items yet",
+            "addFirst": "Add First Item",
+            "galleryItemAdded": "Gallery item added successfully",
+            "somethingWentWrong": "Something went wrong",
+            "pleaseUploadAtLeastOneImage": "Please upload at least one image",
+            "addedBy": "Added by"
 
 
         }
@@ -193,7 +209,23 @@ const resources = {
             "monthlyForecastDescription": "उपलब्ध 5-दिन के पूर्वानुमान डेटा पर आधारित मासिक पूर्वानुमान। यह एक अनुमान है और केवल सामान्य मार्गदर्शन के लिए उपयोग किया जाना चाहिए।",
             "sunrise": "सूर्योदय",
             "sunset": "सूर्यास्त",
-            "coordinates": "निर्देशांक"
+            "coordinates": "निर्देशांक",
+            "gallery": "गैलरी",
+            "addGalleryItem": "गैलरी आइटम जोड़ें",
+            "title": "शीर्षक",
+            "description": "विवरण",
+            "images": "चित्र",
+            "clickToUpload": "अपलोड करने के लिए क्लिक करें",
+            "jpgPngGif": "केवल JPG, PNG या GIF फाइलें",
+            "cancel": "रद्द करें",
+            "submit": "जमा करें",
+            "addNew": "नया जोड़ें",
+            "noGalleryItems": "अभी तक कोई गैलरी आइटम नहीं है",
+            "addFirst": "पहला आइटम जोड़ें",
+            "galleryItemAdded": "गैलरी आइटम सफलतापूर्वक जोड़ा गया",
+            "somethingWentWrong": "कुछ गलत हो गया",
+            "pleaseUploadAtLeastOneImage": "कृपया कम से कम एक छवि अपलोड करें",
+            "addedBy": "जोड़ा गया"
 
         }
     }

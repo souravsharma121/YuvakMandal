@@ -9,11 +9,18 @@ const bcrypt = require('bcryptjs');
 // Change password route
 router.put('/reset-password', async (req, res) => {
   try {
-    const { mobileNumber, newPassword } = req.body;
-    
-    const user = await User.findOne({ mobileNumber });
+    const {
+      mobileNumber,
+      newPassword
+    } = req.body;
+
+    const user = await User.findOne({
+      mobileNumber
+    });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        message: 'User not found'
+      });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -21,38 +28,53 @@ router.put('/reset-password', async (req, res) => {
 
     await user.save();
 
-    res.json({ message: 'Password reset successfully' });
+    res.json({
+      message: 'Password reset successfully'
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: 'Server error'
+    });
   }
 });
 
 // Login route
-router.post('/login', async (req, res) => {  
+router.post('/login', async (req, res) => {
   try {
     // Fix the bug in the request extraction
-    const { mobileNumber, password } = req.body.mobileNumber;
-    
+    const {
+      mobileNumber,
+      password
+    } = req.body.mobileNumber;
+
     // Check if user exists
-    const user = await User.findOne({ mobileNumber });
+    const user = await User.findOne({
+      mobileNumber
+    });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({
+        message: 'Invalid credentials'
+      });
     }
-    
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({
+        message: 'Invalid credentials'
+      });
     }
-    
+
     // Create JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+    const token = jwt.sign({
+        userId: user._id,
+        role: user.role
+      },
+      process.env.JWT_SECRET
     );
-    
+
+
     res.json({
       token,
       user: {
@@ -65,7 +87,9 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: 'Server error'
+    });
   }
 });
 
@@ -81,12 +105,14 @@ router.get('/me', auth, async (req, res) => {
         isGuest: true
       });
     }
-    
+
     const user = await User.findById(req.user.userId).select('-password');
     res.json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: 'Server error'
+    });
   }
 });
 

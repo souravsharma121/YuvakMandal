@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 // Import React Icons
-import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun } from 'react-icons/fa';
+import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages } from 'react-icons/fa';
 import { MdDashboard, MdPeople, MdApproval, MdNotifications, MdPersonAdd } from 'react-icons/md';
 import logo from '../../assets/logo.png';
 
@@ -26,6 +26,7 @@ const scrollbarStyles = `
 
 const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
   const { user, logout } = useContext(AuthContext);
+  const canManageGallery = user && ['Admin', 'Pradhan', 'Up-Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary'].includes(user.role);
   const location = useLocation();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -138,6 +139,28 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                   <FaMoneyBill className="mr-3" size={18} />
                   {t('contributions')}
                 </Link> : <></>}
+
+                {!user?.isGuest ? (
+                  <Link 
+                    to="/gallery" 
+                    className={`flex items-center px-4 py-2 rounded-md ${isActive('/gallery')}`}
+                    onClick={handleMenuClick}
+                  >
+                    <FaImages className="mr-3" size={18} />
+                    {t('gallery')}
+                  </Link>
+                ) : <></>}
+
+                {canManageGallery && (
+                  <Link 
+                    to="/gallery/add" 
+                    className={`flex items-center px-4 py-2 rounded-md ${isActive('/gallery/add')}`}
+                    onClick={handleMenuClick}
+                  >
+                    <FaImages className="mr-3" size={18} />
+                    {t('addGalleryItem')}
+                  </Link>
+                )}
                 
                 {/* Admin only links */}
                 {user && user.role === 'Admin' && (
@@ -155,6 +178,8 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                     </div>
                   </div>
                 )}
+
+
                 
                 {/* Treasurer only links */}
                 {user && (user.role === 'Treasurer' || user.role === 'Admin') && (

@@ -126,9 +126,10 @@ const ContributionList = () => {
   
       // Find outstanding contributors
       const outstanding = nonAdminMembers.filter(member => {
-        const status = memberStatuses[member._id.toString()];
-        return !status || status !== 'Approved';
-      });
+      const status = memberStatuses[member._id.toString()];
+      return member.isActive === "Yes" && (!status || status !== "Approved");
+    });
+
   
       setOutstandingDues(outstanding);
       setOutstandingLoading(false);
@@ -142,7 +143,7 @@ const ContributionList = () => {
     });
   };
 
-  const downloadPDF = async () => {
+ const downloadPDF = async () => {
     // Initialize PDF document - use portrait mode as requested
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -223,22 +224,30 @@ const ContributionList = () => {
       if (filter.year) title += ` ${filter.year}`;
       doc.text(title, pageWidth / 2, 37, { align: 'center' });
       
-      // Group contributions by user
+      // Group contributions by user - FIXED: Use unique key to handle duplicate names
       const userContributions = {};
       
       filteredContributions.forEach(contribution => {
         const userName = contribution.user?.name || 'Unknown';
+        const userId = contribution.user?.id || contribution.userId || '';
+        const village = contribution?.villageName || '';
+        const designation = contribution?.role || '';
         
-        if (!userContributions[userName]) {
-          userContributions[userName] = {
+        // Create a unique key combining multiple fields to handle duplicate names
+        // You can adjust this based on what unique identifiers are available in your data
+        const uniqueKey = `${userName}_${userId}_${village}_${designation}`;
+        
+        if (!userContributions[uniqueKey]) {
+          userContributions[uniqueKey] = {
             name: userName,
-            village: contribution?.villageName || '',
-            designation: contribution?.role || '',
+            village: village,
+            designation: designation,
+            userId: userId,
             months: {}
           };
         }
         
-        userContributions[userName].months[`${contribution.month} ${contribution.year}`] = parseFloat(contribution.amount) || 0;
+        userContributions[uniqueKey].months[`${contribution.month} ${contribution.year}`] = parseFloat(contribution.amount) || 0;
       });
       
       // Get all unique month-year combinations
@@ -311,6 +320,13 @@ const ContributionList = () => {
         }
         
         return row;
+      });
+      
+      // Sort data by name for better readability
+      data.sort((a, b) => {
+        const nameA = a[0].content.toLowerCase();
+        const nameB = b[0].content.toLowerCase();
+        return nameA.localeCompare(nameB);
       });
       
       // Add summary row

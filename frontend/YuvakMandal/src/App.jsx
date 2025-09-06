@@ -38,6 +38,8 @@ import AddMemberContribution from './components/contributions/AddMemberContribut
 import NotificationList from './components/notifications/NotificationList';
 import NotificationForm from './components/notifications/NotificationForm';
 
+import GalleryList from './components/gallery/GalleryList';
+import GalleryAddForm from './components/gallery/GalleryAddForm';
 
 // Weather Component 
 import Weather from './weather/Weather';
@@ -174,6 +176,16 @@ function App() {
                                 </RoleBasedRoute>
                               } 
                             />
+
+                          <Route path="/gallery" element={<GalleryList />} />
+                          <Route 
+                            path="/gallery/add" 
+                            element={
+                              <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Up Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary']}>
+                                <GalleryAddForm />
+                              </RoleBasedRoute>
+                            } 
+                          />
                             
                             {/* Notifications */}
                             <Route path="notifications" element={
