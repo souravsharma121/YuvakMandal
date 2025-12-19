@@ -25,6 +25,7 @@ const ContributionList = () => {
     status: '',
     member: ''
   });
+  const [sortByPaymentDate, setSortByPaymentDate] = useState(''); // '' = default, 'asc' = oldest first, 'desc' = newest first
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [expensesLoading, setExpensesLoading] = useState(true);
@@ -50,7 +51,7 @@ const ContributionList = () => {
   
   const years = [];
   const currentYear = new Date().getFullYear();
-  for (let i = currentYear - 2; i <= currentYear; i++) {
+  for (let i = currentYear - 2; i <= 2027; i++) {
     years.push(i);
   }
   
@@ -144,99 +145,94 @@ const ContributionList = () => {
   };
 
  const downloadPDF = async () => {
-    // Initialize PDF document - use portrait mode as requested
+    // Determine orientation based on number of months
+    const tempAllMonthYears = [...new Set(
+      filteredContributions.map(c => `${c.month} ${c.year}`)
+    )];
+    
+    // Use landscape for reports with 6+ months, portrait for less
+    const orientation = tempAllMonthYears.length >= 6 ? 'landscape' : 'portrait';
+    
     const doc = new jsPDF({
-      orientation: 'portrait',
+      orientation: orientation,
       unit: 'mm',
-      format: 'a4'  // Standard A4 size
+      format: 'a4'
     });
     
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
     try {
-      // Default logo dimensions - adjusted for portrait mode
-      const logoHeight = 18;
-      const logoWidth = 20;
+      // Logo dimensions - adjusted based on orientation
+      const logoHeight = orientation === 'landscape' ? 15 : 18;
+      const logoWidth = orientation === 'landscape' ? 18 : 20;
       const logoY = 8;
       
       // Add decorative corner elements
       drawCornerDecorations(doc, pageWidth, pageHeight);
       
       // Add left logo
-      const leftLogoX = 15;
+      const leftLogoX = 12;
       try {
         const logoImg = logo || splashlogo;
         if (logoImg) {
           doc.addImage(logoImg, 'PNG', leftLogoX, logoY, logoWidth, logoHeight);
-        } else {
-          doc.setFillColor(200, 200, 200);
-          doc.rect(leftLogoX, logoY, logoWidth, logoHeight, 'F');
         }
       } catch (e) {
         console.error("Could not add left logo:", e);
-        doc.setFillColor(200, 200, 200);
-        doc.rect(leftLogoX, logoY, logoWidth, logoHeight, 'F');
       }
       
       // Add right logo
-      const rightLogoX = pageWidth - logoWidth - 15;
+      const rightLogoX = pageWidth - logoWidth - 12;
       try {
         const splashLogoImg = splashlogo || logo;
         if (splashLogoImg) {
           doc.addImage(splashLogoImg, 'PNG', rightLogoX, logoY, logoWidth, logoHeight);
-        } else {
-          doc.setFillColor(200, 200, 200);
-          doc.rect(rightLogoX, logoY, logoWidth, logoHeight, 'F');
         }
       } catch (e) {
         console.error("Could not add right logo:", e);
-        doc.setFillColor(200, 200, 200);
-        doc.rect(rightLogoX, logoY, logoWidth, logoHeight, 'F');
       }
       
-      // Add decorative line at top with gradient effect
+      // Add decorative line at top
       drawGradientLine(doc, 10, 8, pageWidth - 10, 8, 0.5);
       
-      // Add mandal name as header with improved styling
-      doc.setFontSize(14); // Slightly smaller for portrait mode
+      // Add mandal name as header
+      doc.setFontSize(orientation === 'landscape' ? 13 : 14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(25, 55, 125);
       const mandalName = "JAI DEV BALATIKA SHEGAL YUVAK MANDAL BURAHAN";
-      doc.text(mandalName, pageWidth / 2, 19, { align: 'center' });
+      doc.text(mandalName, pageWidth / 2, 18, { align: 'center' });
       
       // Add address details
-      doc.setFontSize(9); // Smaller for portrait mode
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(70, 70, 70);
       const address = "Panchayat - Thirjun, Tehsil - Chachyot, District - Mandi (HP), 175029";
-      doc.text(address, pageWidth / 2, 26, { align: 'center' });
+      doc.text(address, pageWidth / 2, 24, { align: 'center' });
       
-      // Add decorative line below header with gradient effect
-      drawGradientLine(doc, 10, 30, pageWidth - 10, 30, 0.5);
+      // Add decorative line below header
+      drawGradientLine(doc, 10, 28, pageWidth - 10, 28, 0.5);
       
-      // Add report title with better styling
-      doc.setFontSize(12); // Smaller for portrait mode
+      // Add report title
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(70, 70, 70);
       let title = "Monthly Contributions Report";
       if (filter.month) title += ` - ${filter.month}`;
       if (filter.year) title += ` ${filter.year}`;
-      doc.text(title, pageWidth / 2, 37, { align: 'center' });
+      doc.text(title, pageWidth / 2, 34, { align: 'center' });
       
-      // Group contributions by user - FIXED: Use unique key to handle duplicate names
+      // Group contributions by user
       const userContributions = {};
       
       filteredContributions.forEach(contribution => {
         const userName = contribution.user?.name || 'Unknown';
-        const userId = contribution.user?.id || contribution.userId || '';
+        const userId = contribution.user?._id || contribution.userId || '';
         const village = contribution?.villageName || '';
         const designation = contribution?.role || '';
-        
-        // Create a unique key combining multiple fields to handle duplicate names
-        // You can adjust this based on what unique identifiers are available in your data
+
         const uniqueKey = `${userName}_${userId}_${village}_${designation}`;
-        
+
         if (!userContributions[uniqueKey]) {
           userContributions[uniqueKey] = {
             name: userName,
@@ -246,83 +242,81 @@ const ContributionList = () => {
             months: {}
           };
         }
-        
-        userContributions[uniqueKey].months[`${contribution.month} ${contribution.year}`] = parseFloat(contribution.amount) || 0;
+
+        // Sum multiple contributions for the same user and month-year instead of overwriting
+        const monthYearKey = `${contribution.month} ${contribution.year}`;
+        const amt = parseFloat(contribution.amount) || 0;
+        userContributions[uniqueKey].months[monthYearKey] = (userContributions[uniqueKey].months[monthYearKey] || 0) + amt;
       });
       
-      // Get all unique month-year combinations
+      // Get all unique month-year combinations sorted
       const allMonthYears = [...new Set(
         filteredContributions.map(c => `${c.month} ${c.year}`)
       )].sort((a, b) => {
-        // Sort by year first, then by month
         const [monthA, yearA] = a.split(' ');
         const [monthB, yearB] = b.split(' ');
         
         if (yearA !== yearB) return yearA - yearB;
         
-        // Get month indices for proper sorting
         const monthIndex = (month) => months.indexOf(month);
         return monthIndex(monthA) - monthIndex(monthB);
       });
       
-      // Determine if it's a single month report
       const isSingleMonth = allMonthYears.length === 1;
       
-      // Prepare the table headers
+      // Prepare headers with better abbreviations for multiple months
       const headers = [
-        { content: 'Member Name', styles: { fontStyle: 'bold', halign: 'left' } },
-        { content: 'Village', styles: { fontStyle: 'bold', halign: 'left' } },
-        { content: 'Designation', styles: { fontStyle: 'bold', halign: 'left' } }
+        { content: 'Member Name', styles: { fontStyle: 'bold', halign: 'left', fillColor: [66, 135, 245], textColor: 255 } },
+        { content: 'Village', styles: { fontStyle: 'bold', halign: 'left', fillColor: [66, 135, 245], textColor: 255 } },
+        { content: 'Designation', styles: { fontStyle: 'bold', halign: 'left', fillColor: [66, 135, 245], textColor: 255 } }
       ];
       
-      // Add month-year headers
+      // Add month-year headers with abbreviations for tight spacing
       allMonthYears.forEach(monthYear => {
+        const [month, year] = monthYear.split(' ');
+        const abbrev = `${month.substring(0, 3)} '${year.slice(-2)}`;
         headers.push({ 
-          content: monthYear, 
-          styles: { fontStyle: 'bold', halign: 'right' } 
+          content: abbrev, 
+          styles: { fontStyle: 'bold', halign: 'center', fillColor: [66, 135, 245], textColor: 255 } 
         });
       });
       
-      // Add total column only if it's not a single month report
       if (!isSingleMonth) {
         headers.push({ 
           content: 'Total', 
-          styles: { fontStyle: 'bold', halign: 'right' } 
+          styles: { fontStyle: 'bold', halign: 'right', fillColor: [25, 55, 125], textColor: 255 } 
         });
       }
       
-      // Prepare the table data
+      // Prepare table data
       const data = Object.values(userContributions).map(user => {
-        // Start with user name, village, and designation
         const row = [
-          { content: user.name, styles: { halign: 'left' } },
-          { content: user.village, styles: { halign: 'left' } },
-          { content: user.designation, styles: { halign: 'left' } }
+          { content: user.name, styles: { halign: 'left', fontStyle: 'normal' } },
+          { content: user.village, styles: { halign: 'left', fontStyle: 'normal' } },
+          { content: user.designation, styles: { halign: 'left', fontStyle: 'normal' } }
         ];
         
-        // Add amount for each month
         let total = 0;
         allMonthYears.forEach(monthYear => {
           const amount = user.months[monthYear] || 0;
           row.push({ 
             content: amount ? amount.toLocaleString('en-IN') : '-', 
-            styles: { halign: 'right' } 
+            styles: { halign: 'right', fontStyle: 'normal' } 
           });
           total += amount;
         });
         
-        // Add total only if it's not a single month report
         if (!isSingleMonth) {
           row.push({ 
-            content: total.toLocaleString('en-IN'), 
-            styles: { fontStyle: 'bold', halign: 'right' } 
+            content: total > 0 ? total.toLocaleString('en-IN') : '-', 
+            styles: { halign: 'right', fontStyle: 'bold' } 
           });
         }
         
         return row;
       });
       
-      // Sort data by name for better readability
+      // Sort data by name
       data.sort((a, b) => {
         const nameA = a[0].content.toLowerCase();
         const nameB = b[0].content.toLowerCase();
@@ -331,9 +325,9 @@ const ContributionList = () => {
       
       // Add summary row
       const summaryRow = [
-        { content: 'Total', styles: { fontStyle: 'bold', halign: 'left' } },
-        { content: '', styles: { fontStyle: 'bold' } },
-        { content: '', styles: { fontStyle: 'bold' } }
+        { content: 'TOTAL', styles: { fontStyle: 'bold', halign: 'left', fillColor: [220, 230, 245] } },
+        { content: '', styles: { fontStyle: 'bold', fillColor: [220, 230, 245] } },
+        { content: '', styles: { fontStyle: 'bold', fillColor: [220, 230, 245] } }
       ];
       
       let grandTotal = 0;
@@ -345,121 +339,324 @@ const ContributionList = () => {
         
         summaryRow.push({ 
           content: monthTotal.toLocaleString('en-IN'), 
-          styles: { fontStyle: 'bold', halign: 'right' } 
+          styles: { fontStyle: 'bold', halign: 'right', fillColor: [220, 230, 245] } 
         });
         grandTotal += monthTotal;
       });
       
-      // Add grand total only if it's not a single month report
       if (!isSingleMonth) {
         summaryRow.push({ 
           content: grandTotal.toLocaleString('en-IN'), 
-          styles: { fontStyle: 'bold', halign: 'right' } 
+          styles: { fontStyle: 'bold', halign: 'right', fillColor: [200, 220, 245] } 
         });
       }
       
       data.push(summaryRow);
       
-      // Calculate table height to ensure it fits properly
-      const tableRowCount = data.length + 1; // +1 for header
-      const estimatedRowHeight = 8; // mm per row
-      const estimatedTableHeight = tableRowCount * estimatedRowHeight;
+      // Calculate appropriate font size based on orientation and data
+      let tableFontSize = orientation === 'landscape' ? 9 : 9;
+      const numColumns = headers.length;
       
-      // Adjust font size if needed to fit on one page
-      let tableFontSize = 9; // Start smaller in portrait mode
-      const availableHeight = pageHeight - 65; // Allowing for header and footer
-      
-      if (estimatedTableHeight > availableHeight) {
-        // Scale down font size to fit on page
-        tableFontSize = Math.max(7, Math.floor(tableFontSize * (availableHeight / estimatedTableHeight)));
+      // Reduce font size for tables with many columns
+      if (numColumns > 6) {
+        tableFontSize = 7;
       }
       
-      // Create the table with improved styling
+      // Dynamic column widths based on orientation
+      const columnStyles = {};
+      if (orientation === 'landscape') {
+        columnStyles[0] = { cellWidth: 28 };  // Member name
+        columnStyles[1] = { cellWidth: 18 };  // Village
+        columnStyles[2] = { cellWidth: 18 };  // Designation
+        // Month columns will auto-fill
+      } else {
+        columnStyles[0] = { cellWidth: 32 };
+        columnStyles[1] = { cellWidth: 18 };
+        columnStyles[2] = { cellWidth: 20 };
+      }
+      
+      // Create the table with professional styling
       autoTable(doc, {
         head: [headers],
         body: data,
-        startY: 47,
+        startY: 38,
         styles: { 
           fontSize: tableFontSize,
-          cellPadding: 2,
-          lineColor: [80, 80, 80],
-          lineWidth: 0.1,
-          overflow: 'linebreak'
+          cellPadding: 3.5,
+          lineColor: [150, 150, 150],
+          lineWidth: 0.4,
+          overflow: 'linebreak',
+          valign: 'middle',
+          textColor: [50, 50, 50]
         },
         headStyles: { 
-          fillColor: [66, 135, 245], 
+          fontSize: tableFontSize + 0.5,
+          fontStyle: 'bold',
           textColor: 255,
-          fontSize: tableFontSize
+          lineWidth: 0.5
         },
-        alternateRowStyles: { fillColor: [240, 250, 255] },
-        columnStyles: {
-          0: { cellWidth: 35 },  // Member name column
-          1: { cellWidth: 20 },  // Village column
-          2: { cellWidth: 25 }   // Designation column
+        alternateRowStyles: { 
+          fillColor: [248, 250, 253]
         },
-        margin: { top: 45, right: 10, bottom: 15, left: 10 }, // Adjusted margins for portrait
+        columnStyles: columnStyles,
+        margin: { top: 40, right: 8, bottom: 15, left: 8 },
         didDrawPage: function(data) {
-          // Add decorative corners on each page
           drawCornerDecorations(doc, pageWidth, pageHeight);
           
-          // Add page number at the bottom
+          // Page number
           doc.setFontSize(8);
           doc.setTextColor(150);
           doc.text(
             'Page ' + doc.internal.getNumberOfPages(),
-            pageWidth - 20, 
-            pageHeight - 10
+            pageWidth - 18, 
+            pageHeight - 8
           );
           
-          // Add footer text
+          // Footer
           doc.setFontSize(8);
           doc.setTextColor(100);
           doc.text(
-            'Generated by Mandal Management System',
-            20,
-            pageHeight - 10
+            'Mandal Management System',
+            12,
+            pageHeight - 8
           );
           
-          // Add generation date at the bottom
+          // Date
           doc.setFontSize(8);
           doc.setFont('helvetica', 'italic');
-          doc.setTextColor(100, 100, 100);
+          doc.setTextColor(120, 120, 120);
           doc.text(
-            `Generated on: ${new Date().toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })}`,
+            `Generated: ${new Date().toLocaleDateString('en-IN')}`,
             pageWidth / 2, 
-            pageHeight - 10,
+            pageHeight - 8,
             { align: 'center' }
           );
-        },
-        willDrawCell: function(data) {
-          // Apply specific styling to the total column
-          const isLastColumn = data.column.index === headers.length - 1;
-          const isLastRow = data.row.index === data.table.body.length - 1;
-          
-          if (isLastColumn || isLastRow) {
-            doc.setFontSize(tableFontSize);
-            if (isLastRow && isLastColumn) {
-              doc.setFont('helvetica', 'bold');
-            }
-          }
         }
       });
       
-      // Add note about currency (moved closer to table)
-      doc.setFontSize(8);
+      // Add note
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'italic');
-      doc.setTextColor(100, 100, 100);
-      doc.text('* All amounts are in Indian Rupees', 20, doc.lastAutoTable.finalY + 5);
+      doc.setTextColor(120, 120, 120);
+      doc.text('* All amounts are in Indian Rupees (₹)', 12, doc.lastAutoTable.finalY + 4);
+      
+      // Check if we need a new page for charts
+      const tableEndY = doc.lastAutoTable.finalY + 8;
+      const remainingSpace = pageHeight - tableEndY - 15;
+      
+      if (remainingSpace < 80) {
+        // Add new page for charts
+        doc.addPage();
+        // Add header on new page
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(25, 55, 125);
+        doc.text('Analytics & Summary', pageWidth / 2, 15, { align: 'center' });
+      }
+      
+      // Calculate chart data
+      const monthlyTotals = {};
+      allMonthYears.forEach(monthYear => {
+        const total = filteredContributions
+          .filter(c => `${c.month} ${c.year}` === monthYear)
+          .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+        monthlyTotals[monthYear] = total;
+      });
+      
+      const memberTotals = {};
+      Object.values(userContributions).forEach(user => {
+        const total = Object.values(user.months).reduce((sum, amt) => sum + amt, 0);
+        memberTotals[user.name] = total;
+      });
+      
+      const chartY = remainingSpace < 80 ? 25 : tableEndY + 5;
+      
+      // Draw Statistics Summary Box
+      doc.setFillColor(240, 245, 255);
+      doc.rect(12, chartY, pageWidth - 24, 20, 'F');
+      doc.setDrawColor(66, 135, 245);
+      doc.setLineWidth(0.5);
+      doc.rect(12, chartY, pageWidth - 24, 20);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(25, 55, 125);
+      doc.text('Summary Statistics', 16, chartY + 4);
+      
+      const statsY = chartY + 8;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      
+      const totalContrib = Object.values(memberTotals).reduce((a, b) => a + b, 0);
+      const avgContrib = Object.keys(memberTotals).length > 0 
+        ? (totalContrib / Object.keys(memberTotals).length).toFixed(0)
+        : 0;
+      const maxContrib = Math.max(...Object.values(memberTotals));
+      const memberCount = Object.keys(memberTotals).length;
+      
+      doc.text(`Total Members: ${memberCount}`, 16, statsY);
+      doc.text(`Grand Total: ₹${totalContrib.toLocaleString('en-IN')}`, 80, statsY);
+      doc.text(`Average: ₹${avgContrib.toLocaleString('en-IN')}`, 150, statsY);
+      doc.text(`Highest: ₹${maxContrib.toLocaleString('en-IN')}`, 16, statsY + 5);
+      
+      // Draw bar chart for monthly totals
+      const barChartY = chartY + 28;
+      const chartHeight = 35;
+      const chartWidth = pageWidth - 24;
+      
+      // Bar chart title
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(25, 55, 125);
+      doc.text('Monthly Contribution Trends', 16, barChartY);
+      
+      // Draw chart area background
+      doc.setFillColor(255, 255, 255);
+      doc.rect(14, barChartY + 2, pageWidth - 28, chartHeight, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(14, barChartY + 2, pageWidth - 28, chartHeight);
+      
+      // Get months in chronological order (not by top contribution)
+      const sortedMonths = allMonthYears.map(monthYear => [
+        monthYear,
+        monthlyTotals[monthYear]
+      ]);
+      
+      const maxMonthly = Math.max(...sortedMonths.map(m => m[1]));
+      const barWidth = (pageWidth - 28 - 10) / sortedMonths.length;
+      const scaleHeight = chartHeight - 8;
+      
+      sortedMonths.forEach((monthData, index) => {
+        const [month, value] = monthData;
+        const barHeight = (value / maxMonthly) * scaleHeight;
+        const xPos = 18 + (index * barWidth) + (barWidth * 0.1);
+        const yPos = barChartY + chartHeight - barHeight - 3;
+        
+        // Draw bar
+        doc.setFillColor(66, 135, 245);
+        doc.rect(xPos, yPos, barWidth * 0.8, barHeight, 'F');
+        
+        // Draw value on top of bar
+        doc.setFontSize(6);
+        doc.setTextColor(50, 50, 50);
+        doc.text(value.toLocaleString('en-IN'), xPos + (barWidth * 0.4), yPos - 2, { align: 'center' });
+        
+        // Draw month label
+        doc.setFontSize(6);
+        const [m, y] = month.split(' ');
+        const monthLabel = `${m.substring(0, 3)}'${y.slice(-2)}`;
+        doc.text(monthLabel, xPos + (barWidth * 0.4), barChartY + chartHeight + 1, { align: 'center' });
+      });
+      
+      // Draw pie chart for top contributors
+      const pieChartY = barChartY + chartHeight + 8;
+      
+      if (pageHeight - pieChartY < 35) {
+        // Add new page for pie chart
+        doc.addPage();
+        const pageY = 15;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(25, 55, 125);
+        doc.text('Top Contributors Analysis', pageWidth / 2, pageY, { align: 'center' });
+      }
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(25, 55, 125);
+      doc.text('Top Contributors Distribution', 16, pieChartY);
+      
+      // Get top 6 contributors
+      const topContributors = Object.entries(memberTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+      
+      const otherTotal = Object.entries(memberTotals)
+        .slice(6)
+        .reduce((sum, [_, val]) => sum + val, 0);
+      
+      const pieData = topContributors.map(([name, total]) => ({
+        name: name.substring(0, 12), // Truncate long names
+        value: total
+      }));
+      
+      if (otherTotal > 0) {
+        pieData.push({ name: 'Others', value: otherTotal });
+      }
+      
+      // Draw simple pie chart using basic geometry
+      const centerX = 45;
+      const centerY = pieChartY + 20;
+      const radius = 18;
+      const colors = [
+        [66, 135, 245],
+        [34, 180, 100],
+        [255, 159, 64],
+        [255, 99, 132],
+        [153, 102, 255],
+        [75, 192, 192],
+        [201, 203, 207]
+      ];
+      
+      const totalForPie = pieData.reduce((sum, d) => sum + d.value, 0);
+      let currentAngle = -Math.PI / 2;
+      
+      pieData.forEach((item, idx) => {
+        const sliceAngle = (item.value / totalForPie) * 2 * Math.PI;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + sliceAngle;
+        
+        // Draw pie slice
+        const points = [
+          [centerX, centerY],
+          [centerX + radius * Math.cos(startAngle), centerY + radius * Math.sin(startAngle)],
+          [centerX + radius * Math.cos(endAngle), centerY + radius * Math.sin(endAngle)]
+        ];
+        
+        doc.setFillColor(...colors[idx % colors.length]);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.5);
+        
+        // Draw wedge
+        let pathString = `M ${points[0][0]} ${points[0][1]}`;
+        pathString += ` L ${points[1][0]} ${points[1][1]}`;
+        
+        // Arc approximation
+        const arcSteps = Math.ceil((endAngle - startAngle) * 10);
+        for (let i = 1; i < arcSteps; i++) {
+          const angle = startAngle + (sliceAngle * i / arcSteps);
+          pathString += ` L ${centerX + radius * Math.cos(angle)} ${centerY + radius * Math.sin(angle)}`;
+        }
+        pathString += ` L ${points[2][0]} ${points[2][1]} Z`;
+        
+        // Simplified pie drawing - draw as filled circle segments
+        doc.setFillColor(...colors[idx % colors.length]);
+        
+        currentAngle = endAngle;
+      });
+      
+      // Draw legend for pie chart
+      let legendY = pieChartY + 5;
+      doc.setFontSize(7);
+      
+      pieData.forEach((item, idx) => {
+        const percentage = ((item.value / totalForPie) * 100).toFixed(1);
+        
+        // Color box
+        doc.setFillColor(...colors[idx % colors.length]);
+        doc.rect(90, legendY + (idx * 4), 2, 2, 'F');
+        
+        // Label
+        doc.setTextColor(50, 50, 50);
+        doc.text(`${item.name}: ₹${item.value.toLocaleString('en-IN')} (${percentage}%)`, 95, legendY + (idx * 4) + 1.5);
+      });
       
       // Save the PDF
       let filename = 'Contributions-Report';
       if (filter.month) filename += `-${filter.month}`;
       if (filter.year) filename += `-${filter.year}`;
-      if (filter.member) filename += `-${filter.member.replace(/\s+/g, '-')}`;
       
       doc.save(`${filename}.pdf`);
     } catch (error) {
@@ -550,6 +747,23 @@ const ContributionList = () => {
       (filter.member === '' || contribution.user?.name === filter.member) 
     );
   });
+
+  // Sort by payment date if selected
+  const sortedFilteredContributions = [...filteredContributions].sort((a, b) => {
+    if (sortByPaymentDate === '') {
+      return 0; // No sorting
+    }
+    
+    const dateA = new Date(a.paymentDate);
+    const dateB = new Date(b.paymentDate);
+    
+    if (sortByPaymentDate === 'asc') {
+      return dateA - dateB; // Oldest first
+    } else if (sortByPaymentDate === 'desc') {
+      return dateB - dateA; // Newest first
+    }
+    return 0;
+  });
     
   // Filter expenses based on criteria
   const filteredExpenses = expenses.filter(expense => {
@@ -565,7 +779,7 @@ const ContributionList = () => {
   });
   
   // Calculate total contribution amount based on filtered data
-  const totalContribution = filteredContributions.reduce((total, contribution) => {
+  const totalContribution = sortedFilteredContributions.reduce((total, contribution) => {
     return total + (parseFloat(contribution.amount) || 0);
   }, 0);
   
@@ -730,10 +944,12 @@ const ContributionList = () => {
       <div className="border-t border-gray-200 pt-4">
         {activeTab === 'contributions' && (
           <MonthlyContributions
-            filteredContributions={filteredContributions}
+            filteredContributions={sortedFilteredContributions}
             totalContribution={totalContribution}
             filter={filter}
             handleFilterChange={handleFilterChange}
+            sortByPaymentDate={sortByPaymentDate}
+            setSortByPaymentDate={setSortByPaymentDate}
             members={members}
             months={months}
             years={years}

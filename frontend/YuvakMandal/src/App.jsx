@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AlertProvider } from './context/AlertContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ContributionProvider } from './context/ContributionContext';
+import { EventProvider } from './context/EventContext'; // Add this import
 import PrivateRoute from './utils/PrivateRoute';
 import RoleBasedRoute from './utils/RoleBasedRoute';
 import setAuthToken from './utils/setAuthToken';
@@ -13,9 +14,11 @@ import './App.css';
 // Layout Components
 import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
-import MobileNavBar from './components/layout/MobileNavBar'; // Import the mobile nav component
+import MobileNavBar from './components/layout/MobileNavBar';
 import Alert from './components/layout/Alert';
 import SplashScreen from './components/layout/SplashScreen';
+import HomePage from './components/layout/HomePage';
+
 // Auth Components
 import Login from './components/auth/Login';
 
@@ -33,6 +36,12 @@ import ContributionList from './components/contributions/ContributionList';
 import ContributionForm from './components/contributions/ContributionForm';
 import Approval from './components/contributions/ApprovalList';
 import AddMemberContribution from './components/contributions/AddMemberContribution ';
+
+// Event Components - Add these imports
+import EventList from './components/events/EventList';
+import EventForm from './components/events/EventForm';
+import EventDetail from './components/events/EventDetail';
+import LiveScorer from './components/events/LiveScorer';
 
 // Notification Components
 import NotificationList from './components/notifications/NotificationList';
@@ -97,11 +106,10 @@ function App() {
     setShowSplash(false);
   };
 
-    // Function to toggle sidebar
-    const toggleSidebar = () => {
-      setSidebarOpen(!sidebarOpen);
-    };
-  
+  // Function to toggle sidebar
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   // Show splash screen if showSplash is true
   if (showSplash) {
@@ -113,144 +121,198 @@ function App() {
       <AlertProvider>
         <NotificationProvider>
           <ContributionProvider>
-            <Router>
-                
-              <Routes>
-
-                <Route path="/login" element={<Login />} />
-                {/* Private Routes - authenticated users only */}
-                <Route element={<PrivateRoute />}>
-                  {/* Main Layout with Sidebar and Navbar */}
-                  <Route path="/*" element={
-                    <div className="flex flex-col min-h-screen bg-gray-100">
-                      <Navbar isMobile={isMobile} />
-                      <div className="flex flex-1 overflow-hidden">
-                      <Sidebar 
-                          isMobile={isMobile} 
-                          sidebarOpen={sidebarOpen} 
-                          setSidebarOpen={setSidebarOpen} 
-                        />
-                        {/* Main content area - adjusted margin for mobile */}
-                        <main className={`
-                          flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out 
-                          ${!isMobile && sidebarOpen ? 'md:ml-64' : 'ml-0'}
-                          ${isMobile ? 'mt-16 pb-20' : ''}
-                        `}>
-                          <Alert />
-                          <Routes>
-                            {/* Dashboard */}
-                            <Route index element={<Dashboard />} />
-                            <Route path="profile" element={<UserProfile />} />
-                            <Route path="calendar" element={<ContributionCalendar />} />
-                            
-                            {/* Contributions */}
-                            <Route path="contributions" element={ 
-                              <ProtectedFromGuest>
-
-                              <ContributionList />
-                              </ProtectedFromGuest>
-                              
-                              } />
-                            <Route path="contributions/new" element={<ContributionForm />} />
-                            
-                            {/* Treasurer and Admin Routes */}
-                            <Route 
-                              path="contributions/approval" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin', 'Treasurer']}>
-                                  <Approval />
-                                </RoleBasedRoute>
-                              } 
-                            />
-
-                            <Route path="/weather" element={
-                                    <Weather />
-                                } />
-                            
-                            {/* New Route for Adding Member Contributions */}
-                            <Route 
-                              path="contributions/add-member" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin', 'Treasurer']}>
-                                  <AddMemberContribution />
-                                </RoleBasedRoute>
-                              } 
-                            />
-
-                          <Route path="/gallery" element={<GalleryList />} />
-                          <Route 
-                            path="/gallery/add" 
-                            element={
-                              <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Up Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary']}>
-                                <GalleryAddForm />
-                              </RoleBasedRoute>
-                            } 
+            <EventProvider> {/* Add EventProvider wrapper */}
+              <Router>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<Login />} />
+                  
+                  {/* Private Routes - authenticated users only */}
+                  <Route element={<PrivateRoute />}>
+                    {/* Main Layout with Sidebar and Navbar */}
+                    <Route path="/dashboard" element={
+                      <div className="flex flex-col min-h-screen bg-gray-100">
+                        <Navbar isMobile={isMobile} />
+                        <div className="flex flex-1 overflow-hidden">
+                          <Sidebar 
+                            isMobile={isMobile} 
+                            sidebarOpen={sidebarOpen} 
+                            setSidebarOpen={setSidebarOpen} 
                           />
-                            
-                            {/* Notifications */}
-                            <Route path="notifications" element={
-                              <ProtectedFromGuest>
-
-                               <NotificationList />
-                              </ProtectedFromGuest>
-                               
-                               } />
-                            <Route 
-                              path="notifications/new" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Secretary', 'Treasurer', 'Core Member', 'Advisor', 'Chief Advisor']}>
+                          {/* Main content area - adjusted margin for mobile */}
+                          <main className={`
+                            flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out 
+                            ${!isMobile && sidebarOpen ? 'md:ml-64' : 'ml-0'}
+                            ${isMobile ? 'mt-16 pb-20' : ''}
+                          `}>
+                            <Alert />
+                            <Dashboard />
+                          </main>
+                        </div>
+                        {/* Mobile Navigation Bar */}
+                        {isMobile && <MobileNavBar toggleSidebar={toggleSidebar} 
+                                            sidebarOpen={sidebarOpen} 
+                                            setSidebarOpen={setSidebarOpen}  />}        
+                      </div>
+                    } />
+                    
+                    {/* All other protected routes */}
+                    <Route path="/*" element={
+                      <div className="flex flex-col min-h-screen bg-gray-100">
+                        <Navbar isMobile={isMobile} />
+                        <div className="flex flex-1 overflow-hidden">
+                          <Sidebar 
+                            isMobile={isMobile} 
+                            sidebarOpen={sidebarOpen} 
+                            setSidebarOpen={setSidebarOpen} 
+                          />
+                          {/* Main content area - adjusted margin for mobile */}
+                          <main className={`
+                            flex-1 overflow-y-auto p-4 transition-all duration-300 ease-in-out 
+                            ${!isMobile && sidebarOpen ? 'md:ml-64' : 'ml-0'}
+                            ${isMobile ? 'mt-16 pb-20' : ''}
+                          `}>
+                            <Alert />
+                            <Routes>
+                              {/* Dashboard */}
+                              <Route path="dashboard" element={<Dashboard />} />
+                              <Route path="profile" element={<UserProfile />} />
+                              <Route path="calendar" element={<ContributionCalendar />} />
+                              
+                              {/* Events - Add these routes */}
+                              <Route path="events" element={<EventList />} />
+                              <Route 
+                                path="events/new" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Up Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary', 'Core Member']}>
+                                    <ProtectedFromGuest>
+                                      <EventForm />
+                                    </ProtectedFromGuest>
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              <Route path="events/:id" element={<EventDetail />} />
+                              <Route 
+                                path="events/:id/edit" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Up Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary', 'Core Member']}>
+                                    <ProtectedFromGuest>
+                                      <EventForm />
+                                    </ProtectedFromGuest>
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              <Route 
+                                path="events/:id/live" 
+                                element={
                                   <ProtectedFromGuest>
+                                    <LiveScorer />
+                                  </ProtectedFromGuest>
+                                } 
+                              />
+                              
+                              {/* Contributions */}
+                              <Route path="contributions" element={ 
+                                <ProtectedFromGuest>
+                                  <ContributionList />
+                                </ProtectedFromGuest>
+                              } />
+                              <Route path="contributions/new" element={<ContributionForm />} />
+                              
+                              {/* Treasurer and Admin Routes */}
+                              <Route 
+                                path="contributions/approval" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Treasurer']}>
+                                    <Approval />
+                                  </RoleBasedRoute>
+                                } 
+                              />
+
+                              <Route path="/weather" element={<Weather />} />
+                              
+                              {/* New Route for Adding Member Contributions */}
+                              <Route 
+                                path="contributions/add-member" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Treasurer']}>
+                                    <AddMemberContribution />
+                                  </RoleBasedRoute>
+                                } 
+                              />
+
+                              <Route path="/gallery" element={<GalleryList />} />
+                              <Route 
+                                path="/gallery/add" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Up Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary']}>
+                                    <GalleryAddForm />
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              
+                              {/* Notifications */}
+                              <Route path="notifications" element={
+                                <ProtectedFromGuest>
+                                  <NotificationList />
+                                </ProtectedFromGuest>
+                              } />
+                              <Route 
+                                path="notifications/new" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Pradhan', 'Secretary', 'Treasurer', 'Core Member', 'Advisor', 'Chief Advisor']}>
+                                    <ProtectedFromGuest>
                                       <NotificationForm />
-                                  </ProtectedFromGuest>
-                                </RoleBasedRoute>
-                              } 
-                            />
-                            
-                            {/* Admin Routes */}
-                            <Route 
-                              path="admin/users" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin']}>
-                                  <ProtectedFromGuest>
-                                  <UserManagement />
-                                  </ProtectedFromGuest>
-                                </RoleBasedRoute>
-                              } 
-                            />
-                            <Route 
-                              path="admin/users/new" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin']}>
-                                  <ProtectedFromGuest>
-
-                                  <UserForm />
-                                  </ProtectedFromGuest>
-                                </RoleBasedRoute>
-                              } 
-                            />
-                            <Route 
-                              path="admin/users/edit/:id" 
-                              element={
-                                <RoleBasedRoute allowedRoles={['Admin']}>
-                                  <UserForm />
-                                </RoleBasedRoute>
-                              } 
-                            />
-                          </Routes>
-                        </main>
+                                    </ProtectedFromGuest>
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              
+                              {/* Admin Routes */}
+                              <Route 
+                                path="admin/users" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin']}>
+                                    <ProtectedFromGuest>
+                                      <UserManagement />
+                                    </ProtectedFromGuest>
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              <Route 
+                                path="admin/users/new" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin']}>
+                                    <ProtectedFromGuest>
+                                      <UserForm />
+                                    </ProtectedFromGuest>
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                              <Route 
+                                path="admin/users/edit/:id" 
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin']}>
+                                    <UserForm />
+                                  </RoleBasedRoute>
+                                } 
+                              />
+                            </Routes>
+                          </main>
+                        </div>
+                        {/* Mobile Navigation Bar */}
+                        {isMobile && <MobileNavBar toggleSidebar={toggleSidebar} 
+                                            sidebarOpen={sidebarOpen} 
+                                            setSidebarOpen={setSidebarOpen}  />}        
                       </div>
-                      {/* Mobile Navigation Bar */}
-                      {isMobile && <MobileNavBar toggleSidebar={toggleSidebar} 
-                                          sidebarOpen={sidebarOpen} 
-                                          setSidebarOpen={setSidebarOpen}  />}        
-                      </div>
-                  } />
-                </Route>
-                
-                {/* Redirect any unmatched routes to dashboard */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Router>
+                    } />
+                  </Route>
+                  {/* Redirect any unmatched routes */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Router>
+            </EventProvider>
           </ContributionProvider>
         </NotificationProvider>
       </AlertProvider>

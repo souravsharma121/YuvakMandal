@@ -34,8 +34,8 @@ const MobileNavBar = ({ toggleSidebar, sidebarOpen, setSidebarOpen }) => {
     <div className="fixed bottom-0 left-0 right-0 bg-gray-800 text-white z-50 md:hidden">
       <div className="flex justify-around items-center h-16">
         <Link 
-          to="/" 
-          className={`flex flex-col items-center justify-center p-2 ${isActive('/') ? 'text-white' : 'text-gray-400'}`}
+          to="/dashboard" 
+          className={`flex flex-col items-center justify-center p-2 ${isActive('/dashboard') ? 'text-white' : 'text-gray-400'}`}
           onClick={handleNavClick}
         >
           <MdDashboard size={20} />

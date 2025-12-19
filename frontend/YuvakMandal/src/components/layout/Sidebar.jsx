@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 // Import React Icons
-import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages } from 'react-icons/fa';
+import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy } from 'react-icons/fa';
 import { MdDashboard, MdPeople, MdApproval, MdNotifications, MdPersonAdd } from 'react-icons/md';
 import logo from '../../assets/logo.png';
 
@@ -27,12 +27,13 @@ const scrollbarStyles = `
 const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
   const { user, logout } = useContext(AuthContext);
   const canManageGallery = user && ['Admin', 'Pradhan', 'Up-Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary'].includes(user.role);
+  const canManageEvents = user && ['Admin', 'Pradhan', 'Up-Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary', 'Core Member'].includes(user.role);
   const location = useLocation();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   
   const isActive = (path) => {
-    return location.pathname === path ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white';
+    return location.pathname === path || location.pathname.startsWith(path + '/') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white';
   };
   
   const handleMenuClick = () => {
@@ -96,8 +97,8 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
             <div className="p-5">
               <nav className="space-y-2">
                 <Link 
-                  to="/" 
-                  className={`flex items-center px-4 py-2 rounded-md ${isActive('/')}`}
+                  to="/dashboard" 
+                  className={`flex items-center px-4 py-2 rounded-md ${isActive('/dashboard')}`}
                   onClick={handleMenuClick}
                 >
                   <MdDashboard className="mr-3" size={18} />
@@ -111,6 +112,16 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                 >
                   <FaUser className="mr-3" size={18} />
                   {t('profile')}
+                </Link>
+
+                {/* Events Navigation */}
+                <Link 
+                  to="/events" 
+                  className={`flex items-center px-4 py-2 rounded-md ${isActive('/events')}`}
+                  onClick={handleMenuClick}
+                >
+                  <FaTrophy className="mr-3" size={18} />
+                  {t('events')}
                 </Link>
 
                 <Link 
@@ -179,8 +190,6 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                   </div>
                 )}
 
-
-                
                 {/* Treasurer only links */}
                 {user && (user.role === 'Treasurer' || user.role === 'Admin') && (
                     <div className="pt-4 mt-4 border-t border-gray-700">
@@ -223,20 +232,38 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                     </div>
                   </div>
                 )}
-              {/* Language Toggle */}
-              <div className="pt-4 mt-4 border-t border-gray-700">
-                <h3 className="px-4 text-sm text-gray-400 uppercase tracking-wider">{t('language')}</h3>
-                <div className="mt-2 space-y-2">
-                  <button 
-                    onClick={toggleLanguage}
-                    className="flex items-center px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white w-full text-left"
-                    aria-label="Toggle Language"
-                  >
-                    <FaLanguage className="mr-3" size={18} />
-                    {i18n.language === 'en' ? 'हिंदी' : 'English'}
-                  </button>
+
+                {/* Links for users who can create events */}
+                {canManageEvents && (
+                  <div className="pt-4 mt-4 border-t border-gray-700">
+                    <h3 className="px-4 text-sm text-gray-400 uppercase tracking-wider">{t('events')}</h3>
+                    <div className="mt-2 space-y-2">
+                      <Link 
+                        to="/events/new" 
+                        className={`flex items-center px-4 py-2 rounded-md ${isActive('/events/new')}`}
+                        onClick={handleMenuClick}
+                      >
+                        <FaTrophy className="mr-3" size={18} />
+                        {t('createEvent')}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Language Toggle */}
+                <div className="pt-4 mt-4 border-t border-gray-700">
+                  <h3 className="px-4 text-sm text-gray-400 uppercase tracking-wider">{t('language')}</h3>
+                  <div className="mt-2 space-y-2">
+                    <button 
+                      onClick={toggleLanguage}
+                      className="flex items-center px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white w-full text-left"
+                      aria-label="Toggle Language"
+                    >
+                      <FaLanguage className="mr-3" size={18} />
+                      {i18n.language === 'en' ? 'हिंदी' : 'English'}
+                    </button>
+                  </div>
                 </div>
-              </div>
               </nav>
             </div>
           </div>

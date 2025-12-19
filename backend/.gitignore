@@ -1,3 +1,15 @@
 .vercel
 
 .vercel
+/node_modules
+/dist
+/build
+/public
+/src
+/test
+/tools
+/utils
+/vendor
+/webpack.config.js
+/webpack.config.js.map
+/webpack.config.js.map.gz

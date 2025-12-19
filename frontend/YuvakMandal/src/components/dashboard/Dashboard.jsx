@@ -7,6 +7,12 @@ import { Link } from 'react-router-dom';
 import SkeletonLoader from '../loader/SkeletonLoader';
 import splashLogo from "../../assets/splashlogo.png";
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
+import {
+  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+const baseURL = import.meta.env.VITE_API_URL;
 const Dashboard = () => {
   const { user, getAllUsers, logout } = useContext(AuthContext);
   const { notifications, getNotifications } = useContext(NotificationContext);
@@ -14,6 +20,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const {t} = useTranslation()
   const [teamMembers, setTeamMembers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [coreTeam, setCoreTeam] = useState({
     pradhan: null,
     upPradhan: null,
@@ -53,7 +60,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       // Only fetch data if user is not a guest
       if (user && !user.isGuest) {
-        await Promise.all([getNotifications(), getContributions()]);
+        await Promise.all([getNotifications(), getContributions(), fetchExpenses()]);
       } else {
         // For guest users, we can skip these data fetches
         // and just set loading to false
@@ -63,6 +70,15 @@ const Dashboard = () => {
     fetchData();
     // eslint-disable-next-line
   }, [user]);
+
+  const fetchExpenses = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/api/expenses`);
+      setExpenses(response.data);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    }
+  };
   
   // Get pending contributions (for treasurer)
   const pendingContributions = contributions?.filter(
@@ -288,6 +304,21 @@ const Dashboard = () => {
         </div>
       )}
       </div>
+
+      {/* Analytics & Charts Section - Not shown to guests */}
+      {user && !user.isGuest && contributions && contributions.length > 0 && (
+        <div className="mt-12 mb-8">
+          <h2 className="text-2xl font-bold mb-8 text-indigo-800">
+            Contribution Analytics
+          </h2>
+          <AnalyticsSection 
+            contributions={contributions}
+            expenses={expenses}
+            user={user}
+            teamMembers={teamMembers}
+          />
+        </div>
+      )}
       
       {/* Core Leadership Team */}
       <div className="mt-12 mb-16">
@@ -656,6 +687,271 @@ const Dashboard = () => {
 const toggleApplyInfo = () => {
   // Implement modal or popover with application info
   alert("To apply for membership, please visit our office with your ID proof or contact the admin at +91 8219769590");
+};
+
+// Analytics Section Component
+const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
+  const [analyticsData, setAnalyticsData] = useState({
+    userContribution: 0,
+    totalMandal: 0,
+    userPercentage: 0,
+    totalExpenses: 0,
+    availableBalance: 0,
+    monthlyData: [],
+    topContributors: [],
+    userRank: 0
+  });
+
+  useEffect(() => {
+    calculateAnalytics();
+  }, [contributions, expenses, user]);
+
+  const calculateAnalytics = () => {
+    if (!contributions || !user) return;
+
+    // Calculate total mandal contribution
+    const totalMandal = contributions.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+    // Calculate total expenses
+    const totalExpenses = expenses ? expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0) : 0;
+
+    // Calculate available balance
+    const availableBalance = totalMandal - totalExpenses;
+
+    // Calculate user's total contribution
+    const userContributions = contributions.filter(c => 
+      (typeof c.user === 'string' && c.user === user._id) ||
+      (typeof c.user === 'object' && c.user._id === user._id)
+    );
+    const userTotal = userContributions.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+    // Calculate percentage
+    const userPercentage = totalMandal > 0 ? ((userTotal / totalMandal) * 100).toFixed(2) : 0;
+
+    // Calculate monthly data
+    const monthlyMap = {};
+    contributions.forEach(c => {
+      const key = `${c.month} ${c.year}`;
+      if (!monthlyMap[key]) {
+        monthlyMap[key] = 0;
+      }
+      monthlyMap[key] += parseFloat(c.amount) || 0;
+    });
+
+    const monthlyData = Object.entries(monthlyMap).map(([month, total]) => ({
+      month: month.substring(0, 3),
+      total: parseInt(total)
+    })).slice(-6); // Last 6 months
+
+    // Calculate top contributors - use ID instead of name for uniqueness
+    const contributorMap = {};
+    contributions.forEach(c => {
+      const userId = c.user?._id || c.user || 'Unknown';
+      const userName = c.user?.name || 'Unknown';
+      const village = c.user?.villageName || '';
+      const displayName = `${userName}${village ? ` - ${village}` : ''}`;
+      
+      if (!contributorMap[userId]) {
+        contributorMap[userId] = {
+          id: userId,
+          name: displayName,
+          total: 0
+        };
+      }
+      contributorMap[userId].total += parseFloat(c.amount) || 0;
+    });
+
+    const topContributors = Object.values(contributorMap)
+      .map(item => ({
+        name: item.name.substring(0, 25), // Truncate long names
+        value: parseInt(item.total),
+        id: item.id
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    // Calculate user's rank - also use ID
+    const sortedByTotal = Object.values(contributorMap)
+      .sort((a, b) => b.total - a.total)
+      .map(item => item.id);
+    const userRank = sortedByTotal.indexOf(user._id) + 1;
+
+    setAnalyticsData({
+      userContribution: userTotal,
+      totalMandal,
+      userPercentage,
+      totalExpenses,
+      availableBalance,
+      monthlyData,
+      topContributors,
+      userRank
+    });
+  };
+
+  const COLORS = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+
+  return (
+    <div className="space-y-8">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Your Contribution</h3>
+          <p className="text-3xl font-bold text-blue-600">₹{analyticsData.userContribution.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-gray-600 mt-2">Total amount contributed</p>
+        </div>
+
+        <div className="lg:col-span-1 bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow-md border-l-4 border-green-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Mandal Total</h3>
+          <p className="text-3xl font-bold text-green-600">₹{analyticsData.totalMandal.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-gray-600 mt-2">Total collective contributions</p>
+        </div>
+
+        <div className="lg:col-span-1 bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Your Share</h3>
+          <p className="text-3xl font-bold text-purple-600">{analyticsData.userPercentage}%</p>
+          <p className="text-xs text-gray-600 mt-2">Of total contributions</p>
+        </div>
+
+        <div className="lg:col-span-1 bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Your Rank</h3>
+          <p className="text-3xl font-bold text-orange-600">#{analyticsData.userRank}</p>
+          <p className="text-xs text-gray-600 mt-2">Among all members</p>
+        </div>
+
+        <div className="lg:col-span-1 bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg shadow-md border-l-4 border-red-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Total Expenses</h3>
+          <p className="text-3xl font-bold text-red-600">₹{analyticsData.totalExpenses.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-gray-600 mt-2">Total mandal expenditure</p>
+        </div>
+
+        <div className="lg:col-span-1 bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-lg shadow-md border-l-4 border-emerald-500">
+          <h3 className="text-gray-600 text-sm font-medium mb-2">Available Balance</h3>
+          <p className="text-3xl font-bold text-emerald-600">₹{analyticsData.availableBalance.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-gray-600 mt-2">After expenses</p>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Monthly Trend Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-indigo-800 mb-4">Monthly Contribution Trend</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={analyticsData.monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="total" 
+                stroke="#4F46E5" 
+                name="Total Contribution"
+                strokeWidth={2}
+                dot={{ fill: '#4F46E5', r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Contributors Pie Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-indigo-800 mb-4">Top Contributors Distribution</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={analyticsData.topContributors}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value }) => `${name}: ₹${value}`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {analyticsData.topContributors.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Top Contributors Bar Chart */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold text-indigo-800 mb-4">Member Contributions Comparison</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analyticsData.topContributors}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
+            <Legend />
+            <Bar dataKey="value" fill="#4F46E5" name="Contribution Amount" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Contribution Statistics Table */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold text-indigo-800 mb-4">Top 10 Contributors</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-indigo-50 border-b-2 border-indigo-200">
+              <tr>
+                <th className="px-4 py-2 text-left font-semibold text-indigo-800">Rank</th>
+                <th className="px-4 py-2 text-left font-semibold text-indigo-800">Member Name</th>
+                <th className="px-4 py-2 text-left font-semibold text-indigo-800">Village</th>
+                <th className="px-4 py-2 text-right font-semibold text-indigo-800">Total Contribution</th>
+                <th className="px-4 py-2 text-right font-semibold text-indigo-800">Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.values(
+                contributions.reduce((acc, c) => {
+                  const userId = c.user?._id || c.user || 'Unknown';
+                  const userName = c.user?.name || 'Unknown';
+                  const village = c.user?.villageName || 'N/A';
+                  
+                  if (!acc[userId]) {
+                    acc[userId] = {
+                      id: userId,
+                      name: userName,
+                      village: village,
+                      total: 0
+                    };
+                  }
+                  acc[userId].total += parseFloat(c.amount) || 0;
+                  return acc;
+                }, {})
+              )
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10)
+                .map((item, index) => (
+                  <tr 
+                    key={item.id} 
+                    className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-indigo-50'} hover:bg-indigo-100 transition-colors`}
+                  >
+                    <td className="px-4 py-3 font-semibold text-indigo-600">#{index + 1}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
+                    <td className="px-4 py-3 text-gray-700">{item.village}</td>
+                    <td className="px-4 py-3 text-right text-gray-800">₹{item.total.toLocaleString('en-IN')}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-semibold">
+                        {((item.total / analyticsData.totalMandal) * 100).toFixed(2)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

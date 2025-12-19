@@ -113,10 +113,12 @@ const resources = {
             "galleryItemAdded": "Gallery item added successfully",
             "somethingWentWrong": "Something went wrong",
             "pleaseUploadAtLeastOneImage": "Please upload at least one image",
-            "addedBy": "Added by"
+            "addedBy": "Added by",
+            "events": "Events",
+            "createEvent": "Create Event",
 
 
-        }
+        },
     },
     hi: {
         translation: {
@@ -225,8 +227,34 @@ const resources = {
             "galleryItemAdded": "गैलरी आइटम सफलतापूर्वक जोड़ा गया",
             "somethingWentWrong": "कुछ गलत हो गया",
             "pleaseUploadAtLeastOneImage": "कृपया कम से कम एक छवि अपलोड करें",
-            "addedBy": "जोड़ा गया"
+            "addedBy": "जोड़ा गया",
+            "events": "इवेंट्स",
+            "createEvent": "इवेंट बनाएं"
 
+        },
+        events: {
+            "liveScorer": "लाइव स्कोरर",
+            "selectEvent": "इवेंट चुनें",
+            "selectTeam": "टीम चुनें",
+            "currentInnings": "वर्तमान इनिंग्स",
+            "team": "टीम",
+            "batting": "बल्लेबाजी",
+            "bowling": "गेंदबाजी",
+            "overs": "ओवर",
+            "wickets": "विकेट",
+            "runs": "रन",
+            "currentOver": "वर्तमान ओवर",
+            "batsman": "बल्लेबाज",
+            "bowler": "गेंदबाज",
+            "striker": "स्ट्राइकर",
+            "nonStriker": "नॉन-स्ट्राइकर",
+            "currentBowler": "वर्तमान गेंदबाज",
+            "runsThisOver": "इस ओवर में रन",
+            "totalRuns": "कुल रन",
+            "totalWickets": "कुल विकेट",
+            "totalOvers": "कुल ओवर",
+            "addRuns": "रन जोड़ें",
+            "dotBall": "डॉट बॉल"
         }
     }
 };

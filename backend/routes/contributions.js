@@ -232,5 +232,23 @@ router.post('/admin-add', auth, async (req, res) => {
   }
 });
 
+// Delete a contribution (Admin/Treasurer only)
+router.delete('/:id', auth, treasurerAuth, async (req, res) => {
+  try {
+    const contribution = await Contribution.findById(req.params.id);
+
+    if (!contribution) {
+      return res.status(404).json({ message: 'Contribution not found' });
+    }
+
+    await Contribution.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Contribution deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 module.exports = router;

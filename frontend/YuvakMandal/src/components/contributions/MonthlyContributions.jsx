@@ -7,6 +7,8 @@ const MonthlyContributionsTab = ({
   totalContribution, 
   filter, 
   handleFilterChange, 
+  sortByPaymentDate,
+  setSortByPaymentDate,
   members, 
   months, 
   years, 
@@ -181,7 +183,7 @@ const MonthlyContributionsTab = ({
       <h2 className="text-2xl font-semibold mb-6">Monthly Contributions</h2>
       
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="member-filter">
             Member
@@ -257,6 +259,22 @@ const MonthlyContributionsTab = ({
             <option value="Pending">Pending</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="sort-payment-date">
+            Sort by Payment Date
+          </label>
+          <select
+            id="sort-payment-date"
+            value={sortByPaymentDate}
+            onChange={(e) => setSortByPaymentDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Default Order</option>
+            <option value="asc">Oldest First</option>
+            <option value="desc">Newest First</option>
           </select>
         </div>
       </div>
