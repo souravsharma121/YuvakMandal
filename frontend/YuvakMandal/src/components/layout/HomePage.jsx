@@ -946,13 +946,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Manage Contributions - visible to Admin / Treasurer only */}
-      {user && (user.role === 'Admin' || user.role === 'Treasurer') && (
-        <div>
-          <ManageContributions members={teamMembers} />
-        </div>
-      )}
-
       <footer className="bg-gray-900 text-gray-400 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
