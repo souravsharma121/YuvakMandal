@@ -4,7 +4,9 @@ import { useEvent } from '../../context/EventContext';
 import { useAuth } from '../../context/AuthContext';
 import AlertContext from '../../context/AlertContext';
 import splashLogo from '../../assets/splashlogo.jpg';
+import splashLogoPng from '../../assets/splashlogo.png';
 import imageall from '../../assets/imageall.png';
+import bannerImage from '../../assets/banner.jpeg';
 import { CalendarIcon, MapPinIcon, UsersIcon, SparklesIcon, Bars3Icon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import ManageContributions from '../contributions/ManageContributions';
@@ -195,8 +197,60 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Welcome Marquee */}
+      <div className="fixed top-0 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 z-[60] shadow-md">
+        <div className="overflow-hidden h-12 flex items-center">
+          <div className="flex animate-marquee whitespace-nowrap">
+            <div className="flex items-center space-x-8 text-white font-semibold text-sm md:text-base">
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                </svg>
+                आपका हार्दिक स्वागत एवं अभिनन्दन करता है
+              </span>
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 01.787 0l7-3a1 1 0 000-1.838l-7-3zM3.11 9.048l-1.99.852a1 1 0 000 1.838l7 3a1 1 0 00.788 0l7-3a1 1 0 000-1.838l-1.99-.852-1.94.831a1 1 0 01-.787 0l-4-1.714a1 1 0 00-.788 0l-4 1.714a1 1 0 01-.787 0l-1.94-.831z" />
+                  <path d="M1.98 13.718a1 1 0 00-.783 1.838l7 3a1 1 0 00.788 0l7-3a1 1 0 00-.783-1.838l-4.786 2.05-4.786-2.05z" />
+                </svg>
+                Welcome to Jai Dev Balatika Shegal Yuvak Mandal Burahan
+              </span>
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+                जय देव बालाटिका शेगल युवक मण्डल बुराहण
+              </span>
+            </div>
+            <div className="flex items-center space-x-8 text-white font-semibold text-sm md:text-base ml-8">
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                </svg>
+                आपका हार्दिक स्वागत एवं अभिनन्दन करता है
+              </span>
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 01.787 0l7-3a1 1 0 000-1.838l-7-3zM3.11 9.048l-1.99.852a1 1 0 000 1.838l7 3a1 1 0 00.788 0l7-3a1 1 0 000-1.838l-1.99-.852-1.94.831a1 1 0 01-.787 0l-4-1.714a1 1 0 00-.788 0l-4 1.714a1 1 0 01-.787 0l-1.94-.831z" />
+                  <path d="M1.98 13.718a1 1 0 00-.783 1.838l7 3a1 1 0 00.788 0l7-3a1 1 0 00-.783-1.838l-4.786 2.05-4.786-2.05z" />
+                </svg>
+                Welcome to Jai Dev Balatika Shegal Yuvak Mandal Burahan
+              </span>
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+                जय देव बालाटिका शेगल युवक मण्डल बुराहण
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation Bar */}
-      <nav className="fixed top-0 w-full bg-white shadow-md z-50">
+      <nav className="fixed top-12 w-full bg-white shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 gap-2">
             {/* Logo and Title */}
@@ -268,30 +322,51 @@ const HomePage = () => {
         </div>
       </nav>
 
+      {/* Banner Section - Below Navigation */}
+      <section className="w-full pt-[128px] bg-white">
+        <img
+          src={bannerImage}
+          alt="Jai Dev Balatika Shegal Yuvak Mandal Banner"
+          className="w-full h-auto object-cover"
+        />
+      </section>
+
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <section className="pt-16 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className="space-y-6">
-              <h2 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
-                Welcome to <span className="text-indigo-600">Jai Dev Balatika</span> <br />
-                <span className="text-gray-700">Shegal Yuvak Mandal</span>
+          <div className="flex flex-col items-center text-center space-y-8">
+            {/* Logo - Centered and Prominent */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse"></div>
+              <div className="relative bg-white p-4 md:p-6 rounded-full shadow-2xl ring-4 ring-indigo-100 transform group-hover:scale-105 transition-transform duration-300">
+                <img
+                  src={splashLogoPng}
+                  alt="Jai Dev Balatika Logo"
+                  className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Welcome Text */}
+            <div className="space-y-4 max-w-4xl">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                Welcome to <span className="text-indigo-600">Jai Dev Balatika</span>
               </h2>
-              <p className="text-xl text-gray-600 leading-relaxed">
+              <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700">
+                Shegal Yuvak Mandal
+              </h3>
+              <div className="w-24 h-1 bg-gradient-to-r from-indigo-600 to-purple-600 mx-auto rounded-full"></div>
+              <p className="text-lg md:text-xl text-gray-600 leading-relaxed pt-4">
                 A vibrant community dedicated to youth development, cultural preservation, and social empowerment. 
                 Join us in building a stronger, more connected Mandal where every member contributes to collective growth.
               </p>
             </div>
 
-            {/* Right Image */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-3xl blur-2xl opacity-60"></div>
-              <img
-                src={imageall}
-                alt="Mandal Community"
-                className="relative w-full h-auto rounded-3xl shadow-2xl object-cover"
-              />
+            {/* Decorative Elements */}
+            <div className="flex items-center justify-center space-x-4 pt-4">
+              <div className="w-3 h-3 bg-indigo-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-75"></div>
+              <div className="w-3 h-3 bg-indigo-400 rounded-full animate-pulse delay-150"></div>
             </div>
           </div>
         </div>
@@ -945,13 +1020,6 @@ const HomePage = () => {
           )}
         </div>
       </section>
-
-      {/* Manage Contributions - visible to Admin / Treasurer only */}
-      {user && (user.role === 'Admin' || user.role === 'Treasurer') && (
-        <div>
-          <ManageContributions members={teamMembers} />
-        </div>
-      )}
 
       <footer className="bg-gray-900 text-gray-400 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
