@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 // Import React Icons
-import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy } from 'react-icons/fa';
+import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy, FaHome } from 'react-icons/fa';
 import { MdDashboard, MdPeople, MdApproval, MdNotifications, MdPersonAdd } from 'react-icons/md';
 import logo from '../../assets/logo.png';
 
@@ -96,6 +96,18 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
           <div className="flex-grow overflow-y-auto pb-16 sidebar-scrollbar">
             <div className="p-5">
               <nav className="space-y-2">
+                {/* Back to Home Button */}
+                <button
+                  onClick={() => {
+                    navigate('/');
+                    handleMenuClick();
+                  }}
+                  className="w-full flex items-center px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition"
+                >
+                  <FaHome className="mr-3" size={18} />
+                  {t('home') || 'Home'}
+                </button>
+                
                 <Link 
                   to="/dashboard" 
                   className={`flex items-center px-4 py-2 rounded-md ${isActive('/dashboard')}`}
@@ -211,6 +223,14 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                         >
                           <MdPersonAdd className="mr-3" size={18} />
                           {t('addMemberContribution')}
+                        </Link>
+                        <Link
+                          to="/contributions/manage"
+                          className={`flex items-center px-4 py-2 rounded-md ${isActive('/contributions/manage')}`}
+                          onClick={handleMenuClick}
+                        >
+                          <FaMoneyBill className="mr-3" size={18} />
+                          {t('manageContributions') || 'Manage Contributions'}
                         </Link>
                       </div>
                     </div>

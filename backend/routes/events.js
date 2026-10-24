@@ -40,8 +40,8 @@ const upload = multer({
 
 // @route   GET /api/events
 // @desc    Get all events
-// @access  Private
-router.get('/', auth, async (req, res) => {
+// @access  Public
+router.get('/', async (req, res) => {
   try {
     const { status, type, page = 1, limit = 10 } = req.query;
     const query = {};
@@ -76,8 +76,8 @@ router.get('/', auth, async (req, res) => {
 
 // @route   GET /api/events/:id
 // @desc    Get event by ID
-// @access  Private
-router.get('/:id', auth, async (req, res) => {
+// @access  Public
+router.get('/:id', async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('createdBy', 'name email');

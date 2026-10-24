@@ -3,8 +3,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../../context/AuthContext';
 import NotificationContext from '../../context/NotificationContext';
 import ContributionContext from '../../context/ContributionContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SkeletonLoader from '../loader/SkeletonLoader';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import splashLogo from "../../assets/splashlogo.png";
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -14,11 +15,12 @@ import {
 } from 'recharts';
 const baseURL = import.meta.env.VITE_API_URL;
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user, getAllUsers, logout } = useContext(AuthContext);
   const { notifications, getNotifications } = useContext(NotificationContext);
   const { contributions, getContributions } = useContext(ContributionContext);
   const [isLoading, setIsLoading] = useState(true);
-  const {t} = useTranslation()
+  const { t } = useTranslation()
   const [teamMembers, setTeamMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [coreTeam, setCoreTeam] = useState({
@@ -27,19 +29,19 @@ const Dashboard = () => {
     secretary: null,
     treasurer: null
   });
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const users = await getAllUsers();
         setTeamMembers(users);
-        
+
         // Extract core team members
         const pradhan = users.find(user => user.role === 'Pradhan') || null;
         const upPradhan = users.find(user => user.role === 'Up Pradhan') || null;
         const secretary = users.find(user => user.role === 'Secretary') || null;
         const treasurer = users.find(user => user.role === 'Treasurer') || null;
-        
+
         setCoreTeam({
           pradhan,
           upPradhan,
@@ -51,10 +53,10 @@ const Dashboard = () => {
       }
       setIsLoading(false);
     };
-  
+
     fetchUsers();
     // eslint-disable-next-line
-  }, []);  
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +68,7 @@ const Dashboard = () => {
         // and just set loading to false
       }
     };
-    
+
     fetchData();
     // eslint-disable-next-line
   }, [user]);
@@ -79,46 +81,46 @@ const Dashboard = () => {
       console.error('Error fetching expenses:', error);
     }
   };
-  
+
   // Get pending contributions (for treasurer)
   const pendingContributions = contributions?.filter(
     contribution => contribution.status === 'Pending'
   ) || [];
-  
+
   // Get user's contribution status for current month
   const currentDate = new Date();
   const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
   const currentYear = currentDate.getFullYear();
-  
+
   const getCurrentMonthContribution = () => {
     if (!contributions || !user || user.isGuest) return null;
-    
+
     return contributions.find(
-      contribution => 
-        contribution.month === currentMonth && 
+      contribution =>
+        contribution.month === currentMonth &&
         contribution.year === currentYear &&
-        (user.role === 'Admin' || 
-         (contribution.user && 
-          ((typeof contribution.user === 'string' && contribution.user === user._id) || 
-           (typeof contribution.user === 'object' && contribution.user._id === user._id))))
+        (user.role === 'Admin' ||
+          (contribution.user &&
+            ((typeof contribution.user === 'string' && contribution.user === user._id) ||
+              (typeof contribution.user === 'object' && contribution.user._id === user._id))))
     );
   };
-  
+
   const currentMonthContribution = getCurrentMonthContribution();
-  
+
   const contributionStatus = currentMonthContribution
     ? currentMonthContribution.status
     : 'Not Submitted';
-  
+
   if (isLoading) {
     return (
       <div className="p-6">
         <SkeletonLoader type="text" size="lg" className="mb-6" />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           <SkeletonLoader type="dashboard-card" count={3} />
         </div>
-        
+
         <div className="mt-10">
           <SkeletonLoader type="text" size="lg" className="mb-6" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -131,7 +133,7 @@ const Dashboard = () => {
   const leadershipRoles = [
     {
       key: "pradhan",
-      title: "Pradhan",
+      title: t('pradhan'),
       bgColor: "bg-indigo-600",
       titleBgColor: "bg-indigo-800",
       badgeBgColor: "bg-indigo-100",
@@ -140,7 +142,7 @@ const Dashboard = () => {
     },
     {
       key: "upPradhan",
-      title: "Up Pradhan",
+      title: t('up_pradhan'),
       bgColor: "bg-blue-600",
       titleBgColor: "bg-blue-800",
       badgeBgColor: "bg-blue-100",
@@ -149,7 +151,7 @@ const Dashboard = () => {
     },
     {
       key: "secretary",
-      title: "Secretary",
+      title: t('secretary'),
       bgColor: "bg-green-600",
       titleBgColor: "bg-green-800",
       badgeBgColor: "bg-green-100",
@@ -158,7 +160,7 @@ const Dashboard = () => {
     },
     {
       key: "treasurer",
-      title: "Treasurer",
+      title: t('treasurer'),
       bgColor: "bg-amber-600",
       titleBgColor: "bg-amber-800",
       badgeBgColor: "bg-amber-100",
@@ -166,34 +168,45 @@ const Dashboard = () => {
       iconColor: "text-amber-600",
     },
   ];
-  
+
   return (
     <div className="p-6">
+      {/* Back to Home Button */}
+      <div className="mb-6 flex items-center">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center space-x-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition font-medium text-sm"
+        >
+          <ChevronLeftIcon className="w-4 h-4" />
+          <span>Back to Home</span>
+        </button>
+      </div>
+
       <h1 className="text-3xl font-bold mb-6 text-indigo-800">
         {user?.isGuest
-        ? t('welcome.guest')
-        : t('welcome.user', { name: user?.name })}
+          ? t('welcome.guest')
+          : t('welcome.user', { name: user?.name })}
       </h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         {/* Guest Info Card - Only shown to guests */}
         {user && user.isGuest && (
           <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-300">
             <h2 className="text-xl font-semibold mb-4 text-blue-800">Guest Access</h2>
             <p className="text-gray-600 mb-4">
-              You are currently using the application as a guest. 
+              You are currently using the application as a guest.
               Some features are limited in guest mode.
             </p>
             <div className="flex space-x-2">
               <Link
-                to="/login" 
+                to="/login"
                 onClick={logout}
                 className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition-colors duration-300"
               >
                 Login as Member
               </Link>
               <button
-                onClick={() => window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})}
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
                 className="bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors duration-300"
               >
                 View Members
@@ -201,7 +214,7 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        
+
         {/* Current Month Status - Not shown to guests */}
         {user && !user.isGuest && !(user?.role === "Admin") && (
           <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -240,69 +253,69 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        
+
         {/* Recent Notifications - Not shown to guests */}
         {user && !user.isGuest && (
-        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h2 className="text-xl font-semibold mb-4 text-indigo-800">{t('notificationsDashboard.recent')}</h2>
-          {notifications && notifications.length > 0 ? (
-            <ul className="space-y-3">
-              {notifications.slice(0, 3).map(notification => (
-                <li key={notification._id} className="border-b pb-2">
-                  <p className="font-medium">{notification.title}</p>
-                  <p className="text-sm text-gray-600">
-                    {t('by')}: {notification.createdBy?.name} ({notification.createdBy?.role})
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-600">{t('notificationsDashboard.noRecent')}</p>
-          )}
-          <Link
-            to="/notifications"
-            className="block mt-4 text-indigo-600 hover:text-indigo-800 transition-colors duration-300"
-          >
-            {t('notificationsDashboard.viewAll')}
-          </Link>
-        </div>
-      )}
-
-      {user && !user.isGuest && (user.role === 'Treasurer' || user.role === 'Admin') && (
-        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h2 className="text-xl font-semibold mb-4 text-indigo-800">{t('treasurerDashboard.title')}</h2>
-          <p className="mb-2">
-            <span className="font-medium">{t('treasurerDashboard.pendingApprovals')}:</span> {pendingContributions.length}
-          </p>
-          {pendingContributions.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+            <h2 className="text-xl font-semibold mb-4 text-indigo-800">{t('notificationsDashboard.recent')}</h2>
+            {notifications && notifications.length > 0 ? (
+              <ul className="space-y-3">
+                {notifications.slice(0, 3).map(notification => (
+                  <li key={notification._id} className="border-b pb-2">
+                    <p className="font-medium">{notification.title}</p>
+                    <p className="text-sm text-gray-600">
+                      {t('by')}: {notification.createdBy?.name} ({notification.createdBy?.role})
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-600">{t('notificationsDashboard.noRecent')}</p>
+            )}
             <Link
-              to="/contributions/approval"
+              to="/notifications"
               className="block mt-4 text-indigo-600 hover:text-indigo-800 transition-colors duration-300"
             >
-              {t('treasurerDashboard.viewPending')}
+              {t('notificationsDashboard.viewAll')}
             </Link>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {user && user.isGuest && (
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 hover:shadow-lg transition-shadow duration-300">
-          <h2 className="text-xl font-semibold mb-4 text-green-800">{t('guestInfo.title')}</h2>
-          <p className="text-gray-600 mb-3">{t('guestInfo.description')}</p>
-          <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
-            <li>{t('guestInfo.points.development')}</li>
-            <li>{t('guestInfo.points.activities')}</li>
-            <li>{t('guestInfo.points.youth')}</li>
-            <li>{t('guestInfo.points.welfare')}</li>
-          </ul>
-          <button
-            onClick={toggleApplyInfo}
-            className="text-indigo-600 hover:text-indigo-800 transition-colors duration-300"
-          >
-            {t('guestInfo.learnMore')}
-          </button>
-        </div>
-      )}
+        {user && !user.isGuest && (user.role === 'Treasurer' || user.role === 'Admin') && (
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+            <h2 className="text-xl font-semibold mb-4 text-indigo-800">{t('treasurerDashboard.title')}</h2>
+            <p className="mb-2">
+              <span className="font-medium">{t('treasurerDashboard.pendingApprovals')}:</span> {pendingContributions.length}
+            </p>
+            {pendingContributions.length > 0 && (
+              <Link
+                to="/contributions/approval"
+                className="block mt-4 text-indigo-600 hover:text-indigo-800 transition-colors duration-300"
+              >
+                {t('treasurerDashboard.viewPending')}
+              </Link>
+            )}
+          </div>
+        )}
+
+        {user && user.isGuest && (
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 hover:shadow-lg transition-shadow duration-300">
+            <h2 className="text-xl font-semibold mb-4 text-green-800">{t('guestInfo.title')}</h2>
+            <p className="text-gray-600 mb-3">{t('guestInfo.description')}</p>
+            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
+              <li>{t('guestInfo.points.development')}</li>
+              <li>{t('guestInfo.points.activities')}</li>
+              <li>{t('guestInfo.points.youth')}</li>
+              <li>{t('guestInfo.points.welfare')}</li>
+            </ul>
+            <button
+              onClick={toggleApplyInfo}
+              className="text-indigo-600 hover:text-indigo-800 transition-colors duration-300"
+            >
+              {t('guestInfo.learnMore')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Analytics & Charts Section - Not shown to guests */}
@@ -311,7 +324,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold mb-8 text-indigo-800">
             Contribution Analytics
           </h2>
-          <AnalyticsSection 
+          <AnalyticsSection
             contributions={contributions}
             expenses={expenses}
             user={user}
@@ -319,19 +332,19 @@ const Dashboard = () => {
           />
         </div>
       )}
-      
+
       {/* Core Leadership Team */}
       <div className="mt-12 mb-16">
         <h2 className="text-2xl font-bold mb-8 text-indigo-800 text-center">
-          Our Leadership Team
+          {t('leadership_team')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Pradhan */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
             <div className="h-48 bg-indigo-600 relative">
               {coreTeam.pradhan?.image?.includes("https://res") ? (
-                <img 
-                  src={coreTeam.pradhan.image} 
+                <img
+                  src={coreTeam.pradhan.image}
                   alt={coreTeam.pradhan.name}
                   className="w-full h-full object-cover"
                 />
@@ -368,13 +381,13 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Up Pradhan */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
             <div className="h-48 bg-blue-600 relative">
               {coreTeam.upPradhan?.image?.includes("https://res") ? (
-                <img 
-                  src={coreTeam.upPradhan.image} 
+                <img
+                  src={coreTeam.upPradhan.image}
                   alt={coreTeam.upPradhan.name}
                   className="w-full h-full object-cover"
                 />
@@ -411,13 +424,13 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Secretary */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
             <div className="h-48 bg-green-600 relative">
               {coreTeam.secretary?.image?.includes("https://res") ? (
-                <img 
-                  src={coreTeam.secretary.image} 
+                <img
+                  src={coreTeam.secretary.image}
                   alt={coreTeam.secretary.name}
                   className="w-full h-full object-cover"
                 />
@@ -454,13 +467,13 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Treasurer */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
             <div className="h-48 bg-amber-600 relative">
               {coreTeam.treasurer?.image?.includes("https://res") ? (
-                <img 
-                  src={coreTeam.treasurer.image} 
+                <img
+                  src={coreTeam.treasurer.image}
                   alt={coreTeam.treasurer.name}
                   className="w-full h-full object-cover"
                 />
@@ -499,27 +512,27 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* About Section with Logo */}
       <div className="mt-16 mb-16 bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="w-full md:w-2/5 flex items-center justify-center p-2">
-            <img 
-              src={splashLogo} 
-              alt="Mandal Logo" 
+            <img
+              src={splashLogo}
+              alt="Mandal Logo"
               className="max-w-full object-contain rounded-lg"
             />
           </div>
           <div className="w-full md:w-3/5 p-8">
-            <h2 className="text-3xl font-bold mb-6 text-indigo-800">About Our Mandal</h2>
+            <h2 className="text-3xl font-bold mb-6 text-indigo-800">{t('guestInfo.title')}</h2>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              Jai Dev Balatika Shegal Yuvak Mandal Burahan is a community organization committed to fostering unity, 
-              personal growth, and societal progress. Founded on the principles of service and community welfare, 
+              Jai Dev Balatika Shegal Yuvak Mandal Burahan is a community organization committed to fostering unity,
+              personal growth, and societal progress. Founded on the principles of service and community welfare,
               our mandal has been at the forefront of various community initiatives.
             </p>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              Our vision is to create a society where youth are empowered to lead positive change, 
-              cultural heritage is preserved, and community ties are strengthened through 
+              Our vision is to create a society where youth are empowered to lead positive change,
+              cultural heritage is preserved, and community ties are strengthened through
               collaborative efforts and mutual support.
             </p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -543,7 +556,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-start">
                 <svg className="w-8 h-8 text-indigo-600 mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                 </svg>
                 <div>
                   <h3 className="text-lg font-semibold text-indigo-700">Youth Development</h3>
@@ -563,36 +576,36 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* All Members Section */}
       <div className="mt-16">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-indigo-800">All Mandal Members</h2>
+          <h2 className="text-2xl font-bold text-indigo-800">{t('contributionsPage.allMembers')}</h2>
           {user && user.role === 'Admin' && !user.isGuest && (
             <Link
-              to="/admin/users" 
+              to="/admin/users"
               className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition-colors duration-300 flex items-center"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
               </svg>
-              Manage Members
+              {t('manageUsers')}
             </Link>
           )}
         </div>
-        
+
         {/* Members cards in horizontal scrolling layout */}
         <div className="overflow-x-auto pb-6">
           <div className="flex space-x-6 min-w-max">
             {teamMembers.map((member) => (
-              <div 
-                key={member.id} 
+              <div
+                key={member.id}
                 className="bg-white rounded-lg shadow-md overflow-hidden w-64 flex flex-col transition-all duration-300 hover:shadow-xl"
               >
                 <div className="h-40 overflow-hidden relative">
                   {member?.image?.includes("https://res") ? (
-                    <img 
-                      src={member.image} 
+                    <img
+                      src={member.image}
                       alt={member.name}
                       className="w-full h-full object-cover"
                     />
@@ -630,19 +643,19 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
-        
+
         {/* Alternative view for larger screens - grid layout */}
         <div className="hidden lg:block mt-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {teamMembers.map((member) => (
-              <div 
-                key={`grid-${member.id}`} 
+              <div
+                key={`grid-${member.id}`}
                 className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
               >
                 <div className="h-36 overflow-hidden relative">
                   {member?.image?.includes("https://res") ? (
-                    <img 
-                      src={member.image} 
+                    <img
+                      src={member.image}
                       alt={member.name}
                       className="w-full h-full object-cover"
                     />
@@ -719,7 +732,7 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
     const availableBalance = totalMandal - totalExpenses;
 
     // Calculate user's total contribution
-    const userContributions = contributions.filter(c => 
+    const userContributions = contributions.filter(c =>
       (typeof c.user === 'string' && c.user === user._id) ||
       (typeof c.user === 'object' && c.user._id === user._id)
     );
@@ -731,6 +744,7 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
     // Calculate monthly data
     const monthlyMap = {};
     contributions.forEach(c => {
+      // Use standard month matching
       const key = `${c.month} ${c.year}`;
       if (!monthlyMap[key]) {
         monthlyMap[key] = 0;
@@ -738,10 +752,30 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
       monthlyMap[key] += parseFloat(c.amount) || 0;
     });
 
-    const monthlyData = Object.entries(monthlyMap).map(([month, total]) => ({
-      month: month.substring(0, 3),
-      total: parseInt(total)
-    })).slice(-6); // Last 6 months
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const monthlyData = Object.entries(monthlyMap)
+      .map(([key, total]) => {
+        const [month, year] = key.split(' ');
+        return {
+          key,
+          month,
+          year: parseInt(year),
+          total: parseInt(total)
+        };
+      })
+      .sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return monthNames.indexOf(a.month) - monthNames.indexOf(b.month);
+      })
+      .slice(-6) // Last 6 months
+      .map(item => ({
+        month: `${item.month.substring(0, 3)} '${item.year.toString().slice(-2)}`,
+        total: item.total
+      }));
 
     // Calculate top contributors - use ID instead of name for uniqueness
     const contributorMap = {};
@@ -750,7 +784,7 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
       const userName = c.user?.name || 'Unknown';
       const village = c.user?.villageName || '';
       const displayName = `${userName}${village ? ` - ${village}` : ''}`;
-      
+
       if (!contributorMap[userId]) {
         contributorMap[userId] = {
           id: userId,
@@ -843,10 +877,10 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
               <YAxis />
               <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="total" 
-                stroke="#4F46E5" 
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#4F46E5"
                 name="Total Contribution"
                 strokeWidth={2}
                 dot={{ fill: '#4F46E5', r: 5 }}
@@ -915,7 +949,7 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
                   const userId = c.user?._id || c.user || 'Unknown';
                   const userName = c.user?.name || 'Unknown';
                   const village = c.user?.villageName || 'N/A';
-                  
+
                   if (!acc[userId]) {
                     acc[userId] = {
                       id: userId,
@@ -931,8 +965,8 @@ const AnalyticsSection = ({ contributions, expenses, user, teamMembers }) => {
                 .sort((a, b) => b.total - a.total)
                 .slice(0, 10)
                 .map((item, index) => (
-                  <tr 
-                    key={item.id} 
+                  <tr
+                    key={item.id}
                     className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-indigo-50'} hover:bg-indigo-100 transition-colors`}
                   >
                     <td className="px-4 py-3 font-semibold text-indigo-600">#{index + 1}</td>

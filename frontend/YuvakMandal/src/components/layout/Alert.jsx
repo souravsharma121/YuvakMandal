@@ -3,14 +3,14 @@ import { useAlert } from '../../context/AlertContext';
 
 const Alert = () => {
   const { alerts, removeAlert } = useAlert();
-  
+
   return (
-    <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-md">
+    <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-md">
       {alerts.map(alert => (
-        <AlertItem 
-          key={alert.id} 
-          alert={alert} 
-          onClose={() => removeAlert(alert.id)} 
+        <AlertItem
+          key={alert.id}
+          alert={alert}
+          onClose={() => removeAlert(alert.id)}
         />
       ))}
     </div>
@@ -19,17 +19,17 @@ const Alert = () => {
 
 const AlertItem = ({ alert, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
-  
+
   // Animation states
   useEffect(() => {
     // Start entrance animation
     setIsVisible(true);
-    
+
     // Start exit animation slightly before the alert is removed
     const exitTimer = setTimeout(() => {
       setIsVisible(false);
     }, alert.timeout ? alert.timeout - 300 : 1200); // Start exit animation 300ms before removal
-    
+
     return () => clearTimeout(exitTimer);
   }, [alert.timeout]);
 
@@ -82,13 +82,13 @@ const AlertItem = ({ alert, onClose }) => {
   };
 
   return (
-    <div 
+    <div
       className={`
         flex items-center p-4 rounded-lg border-l-4 shadow-md
         transform transition-all duration-300 ease-in-out
         ${getBgColor()}
-        ${isVisible 
-          ? 'translate-x-0 opacity-100' 
+        ${isVisible
+          ? 'translate-x-0 opacity-100'
           : 'translate-x-full opacity-0'
         }
       `}
@@ -97,7 +97,7 @@ const AlertItem = ({ alert, onClose }) => {
         {getIcon()}
         <div className="ml-1 mr-3">{alert.message}</div>
       </div>
-      <button 
+      <button
         onClick={onClose}
         className="ml-auto text-gray-500 hover:text-gray-700 transition-colors"
       >

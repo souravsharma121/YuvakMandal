@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const http = require('http');
-const socketIo = require('socket.io');
 const serverless = require('serverless-http');
 
 // Routes
@@ -14,35 +12,17 @@ const notificationRoutes = require('./routes/notifications');
 const contributionRoutes = require('./routes/contributions');
 const expenseRoutes = require('./routes/expense');
 const galleryRoutes = require('./routes/gallery');
+const shareRoutes = require('./routes/share');
 const weatherRoutes = require('./routes/weather');
 const eventsRoutes = require('./routes/events');
-
-// Socket handler
-const socketHandler = require('./socketHandler');
 
 dotenv.config();
 const app = express();
 
-// Create HTTP server for Socket.IO
-const server = http.createServer(app);
-
-// Initialize Socket.IO
-const io = socketIo(server, {
-  cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:3000"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["*"],
-    credentials: true
-  },
-  transports: ['websocket', 'polling']
-});
-
-// Setup Socket.IO handlers
-socketHandler(io);
-
 // Middleware
 const corsOptions = {
-  origin: '*', // allows all origins
+  origin: '*',
+  credentials: true
 };
 
 app.use(cors(corsOptions));
@@ -61,10 +41,41 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Error:', err));
+// MongoDB - Connect with proper error handling
+let mongoConnected = false;
+
+if (process.env.MONGO_URI) {
+  const mongoStartTime = Date.now();
+  
+  mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    retryWrites: false
+  })
+    .then(() => {
+      mongoConnected = true;
+      console.log(`✅ MongoDB Connected (${Date.now() - mongoStartTime}ms)`);
+    })
+    .catch(err => {
+      console.error('❌ MongoDB Connection Error:', err.message);
+    });
+
+  // Handle connection events
+  mongoose.connection.on('connected', () => {
+    mongoConnected = true;
+    console.log('✅ MongoDB reconnected');
+  });
+  
+  mongoose.connection.on('disconnected', () => {
+    mongoConnected = false;
+    console.warn('⚠️ MongoDB disconnected');
+  });
+} else {
+  console.warn('⚠️ MONGO_URI not set. Please configure it in Vercel environment variables.');
+}
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -75,25 +86,19 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/loadweather', weatherRoutes);
 app.use('/api/events', eventsRoutes);
+// Share pages for social previews (HTML with OG tags)
+app.use('/share', shareRoutes);
 
-// Health check endpoint
+// Health check endpoint with connection warmup
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  const mongoState = mongoose.connection.readyState;
+  const mongoStatus = mongoState === 1 ? 'Connected' : mongoState === 2 ? 'Connecting' : 'Disconnected';
+  
+  res.status(mongoState === 1 ? 200 : 503).json({ 
+    status: mongoState === 1 ? 'OK' : 'Degraded',
     timestamp: new Date().toISOString(),
-    services: {
-      mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
-      socketio: 'Active'
-    }
-  });
-});
-
-// Socket.IO test endpoint
-app.get('/socket-test', (req, res) => {
-  res.json({
-    socketIO: 'Available',
-    connectedClients: io.engine.clientsCount,
-    transport: 'websocket, polling'
+    mongodb: mongoStatus,
+    uptime: process.uptime()
   });
 });
 
@@ -127,19 +132,34 @@ app.use((err, req, res, next) => {
 //   res.status(404).json({ msg: 'Route not found' });
 // });
 
-// Start server with Socket.IO
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running locally on http://localhost:${PORT}`);
-  console.log(`🔌 Socket.IO server ready`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`🧪 Socket test: http://localhost:${PORT}/socket-test`);
-});
+// Export for Express app and serverless handler
+module.exports = app;
+module.exports.handler = serverless(app);
 
-// Export serverless handler (for deployment)
-// module.exports = app;
-// module.exports.handler = serverless(app);
+// For local development only
+if (require.main === module && process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  const http = require('http');
+  const socketIo = require('socket.io');
+  const socketHandler = require('./socketHandler');
 
-// Export server and io for local development
-module.exports.server = server;
-module.exports.io = io;
+  // Create HTTP server with Socket.IO only for local development
+  const server = http.createServer(app);
+  const io = socketIo(server, {
+    cors: {
+      origin: ["http://localhost:5173", "http://127.0.0.1:3000"],
+      methods: ["GET", "POST"],
+      allowedHeaders: ["*"],
+      credentials: true
+    },
+    transports: ['websocket', 'polling']
+  });
+
+  socketHandler(io);
+  
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running locally on http://localhost:${PORT}`);
+    console.log(`🔌 Socket.IO server ready`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  });
+}

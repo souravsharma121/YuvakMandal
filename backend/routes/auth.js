@@ -6,6 +6,16 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 
+// Timeout utility for operations
+const withTimeout = (promise, timeMs) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Operation timeout')), timeMs)
+    )
+  ]);
+};
+
 // Change password route
 router.put('/reset-password', async (req, res) => {
   try {
@@ -42,27 +52,52 @@ router.put('/reset-password', async (req, res) => {
 // Login route
 router.post('/login', async (req, res) => {
   try {
-    // Fix the bug in the request extraction
     const {
-      mobileNumber,
+      mobileNumber, // This field now acts as "identifier" (email or mobile) from the frontend
       password
-    } = req.body.mobileNumber;
+    } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({
-      mobileNumber
-    });
+    if (!mobileNumber || !password) {
+      return res.status(400).json({ message: 'Please provide both mobile/email and password' });
+    }
+
+    let user;
+    const identifier = String(mobileNumber); // Ensure it's a string
+    
+    // Check if the input looks like an email
+    const isEmail = identifier.includes('@');
+    
+    try {
+      if (isEmail) {
+        user = await withTimeout(User.findOne({ email: identifier }), 15000);
+      } else {
+        user = await withTimeout(User.findOne({ mobileNumber: identifier }), 15000);
+      }
+    } catch (timeoutErr) {
+      console.error('Database timeout on login:', timeoutErr.message);
+      return res.status(500).json({
+        message: 'Login service temporarily unavailable. Please try again.'
+      });
+    }
+
     if (!user) {
       return res.status(400).json({
-        message: 'Invalid credentials'
+        message: 'Incorrect email or mobile number'
       });
+    }
+
+    // Check user active status
+    if (user.isActive === 'No') {
+        return res.status(403).json({
+            message: 'Your account has been deactivated. Please contact admin.'
+        });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({
-        message: 'Invalid credentials'
+        message: 'Incorrect password'
       });
     }
 
@@ -81,6 +116,7 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         mobileNumber: user.mobileNumber,
+        email: user.email,
         role: user.role,
         villageName: user.villageName
       }

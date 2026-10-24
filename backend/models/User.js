@@ -10,7 +10,13 @@ const UserSchema = new mongoose.Schema({
   mobileNumber: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
+  },
+  email: {
+    type: String,
+    required: false,
+    index: true
   },
   password: {
     type: String,
@@ -25,9 +31,18 @@ const UserSchema = new mongoose.Schema({
     enum: ['Admin', 'Pradhan','Up Pradhan', 'Secretary', 'Treasurer', 'Advisor', 'Chief Advisor', 'Core Member', 'Other Member'],
     required: true
   },
+  isActive: {
+    type: String,
+    enum: ['Yes', 'No'],
+    default: 'Yes'
+  },
   image:{
     type: String,
     default: 'https://example.com/default-profile.png'
+  },
+  imagePublicId:{
+    type: String,
+    default: null
   },
   createdAt: {
     type: Date,

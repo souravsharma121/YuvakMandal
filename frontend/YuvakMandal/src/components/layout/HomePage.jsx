@@ -9,13 +9,13 @@ import imageall from '../../assets/imageall.png';
 import bannerImage from '../../assets/banner.jpeg';
 import { CalendarIcon, MapPinIcon, UsersIcon, SparklesIcon, Bars3Icon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import ManageContributions from '../contributions/ManageContributions';
+import MandalMap from './MandalMap';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const { events, getEvents } = useEvent();
-  const { user, guestLogin, logout, isAuthenticated } = useAuth();
   const { setAlert } = useContext(AlertContext);
+  const { isAuthenticated, logout } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [coreTeam, setCoreTeam] = useState({});
@@ -27,12 +27,7 @@ const HomePage = () => {
   const [isInitiativePaused, setIsInitiativePaused] = useState(false);
   const baseURL = import.meta.env.VITE_API_URL;
 
-  // Auto-login as guest if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated && !user?.isGuest) {
-      guestLogin();
-    }
-  }, [isAuthenticated]);
+  // Removed guest auto-login. Public can view posts and members.
 
   useEffect(() => {
     // Fetch events for the home page
@@ -171,7 +166,8 @@ const HomePage = () => {
     }
   };
 
-  const getShareUrl = (id) => `${window.location.origin}${window.location.pathname}?initiative=${id}`;
+  // Use backend share endpoint so social platforms fetch OG meta tags
+  const getShareUrl = (id) => `${window.location.origin}/share/initiative/${id}`;
 
   const handleShare = async (item) => {
     const url = getShareUrl(item._id);
@@ -260,6 +256,7 @@ const HomePage = () => {
                 <h1 className="text-sm md:text-xl font-bold text-indigo-600 truncate">Jai Dev Balatika</h1>
                 <p className="text-xs text-gray-600 truncate">Shegal Yuvak Mandal</p>
               </div>
+            
             </div>
 
             {/* Right Side - Navigation and Auth */}
@@ -272,12 +269,32 @@ const HomePage = () => {
               </div>
 
               {/* Login Button */}
-              <Link
-                to="/login"
-                className="px-3 md:px-4 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition font-medium text-sm md:text-base"
-              >
-                Login
-              </Link>
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/dashboard"
+                    className="px-3 md:px-4 py-2 text-white bg-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-700 transition font-medium text-sm md:text-base"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/');
+                    }}
+                    className="px-3 md:px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition font-medium text-sm md:text-base"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="px-3 md:px-4 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition font-medium text-sm md:text-base"
+                >
+                  Login
+                </Link>
+              )}
 
               {/* Mobile Menu Button */}
               <button
@@ -296,6 +313,17 @@ const HomePage = () => {
           {/* Mobile Menu Dropdown */}
           {isMobileMenuOpen && (
             <div className="md:hidden pb-4 border-t border-gray-200">
+              {isAuthenticated && (
+                <button
+                  onClick={() => {
+                    navigate('/');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded font-medium transition"
+                >
+                  ← Back to Home
+                </button>
+              )}
               <a
                 href="#events"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -372,6 +400,8 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Mandal Location Map (moved to footer) */}
+
       {/* Initiatives & Highlights Section */}
       <section id="initiatives" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -395,7 +425,7 @@ const HomePage = () => {
                   {galleryItems.slice(0, 6).map((item, index) => (
                     <div
                       key={item._id}
-                      onClick={() => openInitiative(item)}
+                      onClick={() => navigate(`/initiative/${item._id}`)}
                       className="w-full md:w-full px-4 py-6 flex-shrink-0"
                       style={{ width: `${100 / galleryItems.slice(0,6).length}%` }}
                     >
@@ -800,8 +830,8 @@ const HomePage = () => {
                 <p className="text-lg">
                   <span className="font-semibold">Email:</span>
                 </p>
-                <a href="mailto:balatikayuvakmandalburahan@gmail.com" className="text-orange-600 hover:text-orange-700 font-semibold break-all">
-                  balatikayuvakmandalburahan@gmail.com
+                <a href="mailto:devbalatikayuvakmandalburahan@gmail.com" className="text-orange-600 hover:text-orange-700 font-semibold break-all">
+                  devbalatikayuvakmandalburahan@gmail.com
                 </a>
               </div>
             </div>
@@ -844,89 +874,6 @@ const HomePage = () => {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Events Section */}
-      <section id="events" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-4">Upcoming Events</h2>
-          <p className="text-center text-gray-600 max-w-3xl mx-auto mb-16 text-lg">
-            Join us for exciting events and activities
-          </p>
-
-          {upcomingEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {upcomingEvents.map(event => (
-                <div
-                  key={event._id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-                >
-                  {/* Event Image */}
-                  {event.image && (
-                    <div className="h-48 overflow-hidden bg-gray-200">
-                      <img
-                        src={event.image}
-                        alt={event.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-
-                  {/* Event Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{event.name}</h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
-
-                    {/* Event Details */}
-                    <div className="space-y-3 mb-6 border-t pt-4">
-                      <div className="flex items-center text-gray-700">
-                        <CalendarIcon className="w-5 h-5 mr-3 text-indigo-600" />
-                        <span className="text-sm">
-                          {new Date(event.date).toLocaleDateString('en-IN', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center text-gray-700">
-                          <MapPinIcon className="w-5 h-5 mr-3 text-indigo-600" />
-                          <span className="text-sm truncate">{event.location}</span>
-                        </div>
-                      )}
-                      {event.type && (
-                        <div className="flex items-center text-gray-700">
-                          <UsersIcon className="w-5 h-5 mr-3 text-indigo-600" />
-                          <span className="text-sm">{event.type}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex justify-between items-center">
-                      <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                        {event.status}
-                      </span>
-                      <Link
-                        to={`/login`}
-                        className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
-                      >
-                        View Details →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl p-16 text-center shadow-md">
-              <CalendarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg">No upcoming events at the moment.</p>
-              <p className="text-gray-500 mt-2">Check back soon for new events!</p>
-            </div>
-          )}
         </div>
       </section>
 
@@ -1023,7 +970,7 @@ const HomePage = () => {
 
       <footer className="bg-gray-900 text-gray-400 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h3 className="text-white font-bold mb-4">About Us</h3>
               <p className="text-sm leading-relaxed">
@@ -1036,16 +983,31 @@ const HomePage = () => {
               <ul className="space-y-2 text-sm">
                 <li><a href="#about" className="hover:text-white transition">About</a></li>
                 <li><a href="#events" className="hover:text-white transition">Events</a></li>
-                <li><Link to="/login" className="hover:text-white transition">Login</Link></li>
+                {isAuthenticated ? (
+                  <>
+                    <li><Link to="/dashboard" className="hover:text-white transition">Dashboard</Link></li>
+                    <li><button onClick={() => {logout(); navigate('/');}} className="hover:text-white transition">Logout</button></li>
+                  </>
+                ) : (
+                  <li><Link to="/login" className="hover:text-white transition">Login</Link></li>
+                )}
               </ul>
             </div>
             <div>
               <h3 className="text-white font-bold mb-4">Contact</h3>
               <p className="text-sm">
-                Shegal, Village<br />
-                District, State<br />
-                Email: info@mandal.com
+                Village - Burahan<br />
+                District - Mandi<br />
+                State - Himachal Pradesh<br />
+                PIN - 175029<br />
+                Email: devbalatikayuvakmandalburahan@gmail.com
               </p>
+            </div>
+            <div>
+              <h3 className="text-white font-bold mb-4">Location</h3>
+              <div className="bg-gray-800 rounded-lg overflow-hidden p-2">
+                <MandalMap lat={31.568966} lng={77.110055} placeName="Jai Dev Balatika Shegal Yuvak Mandal Burahan" height={180} />
+              </div>
             </div>
           </div>
           <div className="border-t border-gray-700 pt-8 text-center text-sm">

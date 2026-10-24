@@ -5,59 +5,63 @@ import AuthContext from '../../context/AuthContext';
 import AlertContext from '../../context/AlertContext';
 
 // Import background image and logo
-import loginBg from '../../assets/splashbg.jpg'; 
+import loginBg from '../../assets/splashbg.jpg';
 import splashLogo from '../../assets/splashlogo.jpg';
+
+import Alert from '../layout/Alert';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     mobileNumber: '',
     password: ''
   });
-  
+
   const { mobileNumber, password } = formData;
   const { login, isAuthenticated, error, clearError, logout, user } = useContext(AuthContext);
   const { setAlert } = useContext(AlertContext);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     // If user is guest, logout and show login form
     if (user?.isGuest) {
       logout();
       return;
     }
-    
+
     // If user is authenticated as a real user, redirect to dashboard
     if (isAuthenticated && !user?.isGuest) {
       navigate('/dashboard');
     }
-    
+
     if (error) {
       setAlert(error, 'danger');
       clearError();
     }
     // eslint-disable-next-line
   }, [isAuthenticated, error, user?.isGuest]);
-  
+
   const onChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  
+
   const onSubmit = e => {
     e.preventDefault();
-    login({ mobileNumber, password });
+    login(mobileNumber, password);
   };
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+      <Alert />
+
       {/* Background Image with Overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
         style={{ backgroundImage: `url(${loginBg})` }}
       />
-      
+
       {/* Dark Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 to-gray-900/60 z-0"></div>
-      
+
       <div className="w-full relative z-10">
         {/* Back Button */}
         <div className="max-w-md mx-auto mb-6">
@@ -89,21 +93,21 @@ const Login = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome Back</h2>
               <p className="text-gray-600 text-sm">Login to your Mandal account</p>
             </div>
-            
+
             {/* Login Form */}
             <form className="space-y-4" onSubmit={onSubmit}>
               <div>
                 <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile Number
+                  Mobile Number / Email
                 </label>
                 <input
                   id="mobileNumber"
                   name="mobileNumber"
                   type="text"
-                  autoComplete="tel"
+                  autoComplete="username"
                   required
                   className="appearance-none block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
-                  placeholder="Enter your registered mobile number"
+                  placeholder="Enter mobile number or email"
                   value={mobileNumber}
                   onChange={onChange}
                 />

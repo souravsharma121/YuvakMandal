@@ -36,11 +36,13 @@ import ContributionList from './components/contributions/ContributionList';
 import ContributionForm from './components/contributions/ContributionForm';
 import Approval from './components/contributions/ApprovalList';
 import AddMemberContribution from './components/contributions/AddMemberContribution ';
+import ManageContributions from './components/contributions/ManageContributions';
 
 // Event Components - Add these imports
 import EventList from './components/events/EventList';
 import EventForm from './components/events/EventForm';
 import EventDetail from './components/events/EventDetail';
+import PostDetail from './components/events/PostDetail';
 import LiveScorer from './components/events/LiveScorer';
 
 // Notification Components
@@ -49,6 +51,7 @@ import NotificationForm from './components/notifications/NotificationForm';
 
 import GalleryList from './components/gallery/GalleryList';
 import GalleryAddForm from './components/gallery/GalleryAddForm';
+import InitiativeDetail from './components/gallery/InitiativeDetail';
 
 // Weather Component 
 import Weather from './weather/Weather';
@@ -127,6 +130,7 @@ function App() {
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/initiative/:id" element={<InitiativeDetail />} />
                   
                   {/* Private Routes - authenticated users only */}
                   <Route element={<PrivateRoute />}>
@@ -228,6 +232,15 @@ function App() {
                                     <Approval />
                                   </RoleBasedRoute>
                                 } 
+                              />
+
+                              <Route 
+                                path="contributions/manage"
+                                element={
+                                  <RoleBasedRoute allowedRoles={['Admin', 'Treasurer']}>
+                                    <ManageContributions />
+                                  </RoleBasedRoute>
+                                }
                               />
 
                               <Route path="/weather" element={<Weather />} />
