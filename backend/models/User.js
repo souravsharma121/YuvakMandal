@@ -44,6 +44,22 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  resetOtpHash: {
+    type: String,
+    default: null
+  },
+  resetOtpExpires: {
+    type: Date,
+    default: null
+  },
+  resetOtpAttempts: {
+    type: Number,
+    default: 0
+  },
+  passwordChangedAt: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

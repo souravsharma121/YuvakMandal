@@ -128,6 +128,11 @@ const Login = () => {
                   value={password}
                   onChange={onChange}
                 />
+                <div className="mt-2 text-right">
+                  <Link to="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-800">
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
 
               <button

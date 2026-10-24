@@ -3,7 +3,8 @@ import AuthContext from '../../context/AuthContext';
 import AlertContext from '../../context/AlertContext';
 import UserForm from './UserForm';
 import SkeletonLoader from '../loader/SkeletonLoader';
-import { Edit2, Trash2, Plus, Search, User, Phone, MapPin, Mail, Shield, LayoutGrid, List } from 'lucide-react';
+import { Edit2, Trash2, Plus, Search, User, Phone, MapPin, Mail, Shield, LayoutGrid, List, KeyRound } from 'lucide-react';
+import AdminResetPassword from './AdminResetPassword';
 
 const UserManagement = () => {
   const { getAllUsers, deleteUser } = useContext(AuthContext);
@@ -15,6 +16,7 @@ const UserManagement = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [resetTarget, setResetTarget] = useState(null);
 
   const fetchUsers = async () => {
     // keeping loading quiet for refresh updates to avoid flicker, only excessive loading for initial
@@ -172,6 +174,10 @@ const UserManagement = () => {
         </div>
       )}
 
+      {resetTarget && (
+        <AdminResetPassword user={resetTarget} onClose={() => setResetTarget(null)} />
+      )}
+
       {/* Users List - Responsive Grid */}
       {/* Users List - Grid vs List View */}
       {viewMode === 'grid' ? (
@@ -202,6 +208,13 @@ const UserManagement = () => {
                     title="Edit User"
                   >
                     <Edit2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => setResetTarget(user)}
+                    className="p-2 text-gray-500 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-colors"
+                    title="Reset Password"
+                  >
+                    <KeyRound size={18} />
                   </button>
                   <button
                     onClick={() => handleDeleteUser(user._id)}
@@ -307,6 +320,13 @@ const UserManagement = () => {
                           title="Edit User"
                         >
                           <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => setResetTarget(user)}
+                          className="p-1.5 text-gray-500 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-colors"
+                          title="Reset Password"
+                        >
+                          <KeyRound size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user._id)}

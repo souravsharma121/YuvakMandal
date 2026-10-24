@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const serverless = require('serverless-http');
+const helmet = require('helmet');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -15,16 +16,31 @@ const galleryRoutes = require('./routes/gallery');
 const shareRoutes = require('./routes/share');
 const weatherRoutes = require('./routes/weather');
 const eventsRoutes = require('./routes/events');
+const documentRoutes = require('./routes/documents');
 
 dotenv.config();
 const app = express();
 
+// Behind Vercel's proxy so rate limits key on the real client IP
+app.set('trust proxy', 1);
+
 // Middleware
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000')
+  .split(',')
+  .map(origin => origin.trim());
+
 const corsOptions = {
-  origin: '*',
+  origin: (origin, callback) => {
+    // Allow requests without an Origin header (server-to-server, curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(null, false);
+  },
   credentials: true
 };
 
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -86,6 +102,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/loadweather', weatherRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/documents', documentRoutes);
 // Share pages for social previews (HTML with OG tags)
 app.use('/share', shareRoutes);
 

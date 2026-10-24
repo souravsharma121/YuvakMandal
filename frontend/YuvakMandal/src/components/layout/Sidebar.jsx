@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 // Import React Icons
-import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy, FaHome } from 'react-icons/fa';
+import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy, FaHome, FaFileAlt } from 'react-icons/fa';
 import { MdDashboard, MdPeople, MdApproval, MdNotifications, MdPersonAdd } from 'react-icons/md';
 import logo from '../../assets/logo.png';
 
@@ -185,6 +185,17 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                   </Link>
                 )}
                 
+                {!user?.isGuest && (
+                  <Link
+                    to="/documents"
+                    className={`flex items-center px-4 py-2 rounded-md ${isActive('/documents')}`}
+                    onClick={handleMenuClick}
+                  >
+                    <FaFileAlt className="mr-3" size={18} />
+                    Important Documents
+                  </Link>
+                )}
+
                 {/* Admin only links */}
                 {user && user.role === 'Admin' && (
                   <div className="pt-4 mt-4 border-t border-gray-700">

@@ -21,6 +21,7 @@ import HomePage from './components/layout/HomePage';
 
 // Auth Components
 import Login from './components/auth/Login';
+import ForgotPassword from './components/auth/ForgotPassword';
 
 // Dashboard Components
 import Dashboard from './components/dashboard/Dashboard';
@@ -52,6 +53,9 @@ import NotificationForm from './components/notifications/NotificationForm';
 import GalleryList from './components/gallery/GalleryList';
 import GalleryAddForm from './components/gallery/GalleryAddForm';
 import InitiativeDetail from './components/gallery/InitiativeDetail';
+
+// Documents Component
+import ImportantDocuments from './components/documents/ImportantDocuments';
 
 // Weather Component 
 import Weather from './weather/Weather';
@@ -130,6 +134,7 @@ function App() {
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/initiative/:id" element={<InitiativeDetail />} />
                   
                   {/* Private Routes - authenticated users only */}
@@ -256,6 +261,12 @@ function App() {
                               />
 
                               <Route path="/gallery" element={<GalleryList />} />
+
+                              <Route path="documents" element={
+                                <ProtectedFromGuest>
+                                  <ImportantDocuments />
+                                </ProtectedFromGuest>
+                              } />
                               <Route 
                                 path="/gallery/add" 
                                 element={

@@ -13,3 +13,8 @@
 /webpack.config.js
 /webpack.config.js.map
 /webpack.config.js.map.gz
+
+# Secrets
+.env
+.env.*
+!.env.example
