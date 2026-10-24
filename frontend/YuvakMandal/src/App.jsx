@@ -56,6 +56,7 @@ import InitiativeDetail from './components/gallery/InitiativeDetail';
 
 // Documents Component
 import ImportantDocuments from './components/documents/ImportantDocuments';
+import ImportantUpdates from './components/updates/ImportantUpdates';
 
 // Weather Component 
 import Weather from './weather/Weather';
@@ -261,6 +262,12 @@ function App() {
                               />
 
                               <Route path="/gallery" element={<GalleryList />} />
+
+                              <Route path="updates" element={
+                                <ProtectedFromGuest>
+                                  <ImportantUpdates />
+                                </ProtectedFromGuest>
+                              } />
 
                               <Route path="documents" element={
                                 <ProtectedFromGuest>

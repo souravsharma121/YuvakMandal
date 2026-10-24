@@ -4,9 +4,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 // Import React Icons
-import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy, FaHome, FaFileAlt } from 'react-icons/fa';
+import { FaUser, FaMoneyBill, FaSignOutAlt, FaLanguage, FaCloudSun, FaImages, FaTrophy, FaHome, FaFileAlt, FaBullhorn } from 'react-icons/fa';
 import { MdDashboard, MdPeople, MdApproval, MdNotifications, MdPersonAdd } from 'react-icons/md';
 import logo from '../../assets/logo.png';
+import { syncPushSubscription, disablePushNotifications } from '../../utils/pushNotifications';
 
 const scrollbarStyles = `
   .sidebar-scrollbar::-webkit-scrollbar {
@@ -25,7 +26,7 @@ const scrollbarStyles = `
 `;
 
 const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, token, logout } = useContext(AuthContext);
   const canManageGallery = user && ['Admin', 'Pradhan', 'Up-Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary'].includes(user.role);
   const canManageEvents = user && ['Admin', 'Pradhan', 'Up-Pradhan', 'Advisor', 'Chief Advisor', 'Treasurer', 'Secretary', 'Core Member'].includes(user.role);
   const location = useLocation();
@@ -42,7 +43,12 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
     }
   };
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await disablePushNotifications(token);
+    } catch (err) {
+      console.error('Failed to remove notification subscription:', err);
+    }
     logout();
     setSidebarOpen(false);
     navigate('/login');
@@ -78,6 +84,11 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
     };
   }, []);
   
+  useEffect(() => {
+    if (!user || user.isGuest || !token) return;
+    syncPushSubscription(token).catch(err => console.error('Push sync failed:', err));
+  }, [user?.isGuest, token]);
+
   return (
     <>
       <aside 
@@ -193,6 +204,17 @@ const Sidebar = ({ isMobile, sidebarOpen, setSidebarOpen }) => {
                   >
                     <FaFileAlt className="mr-3" size={18} />
                     Important Documents
+                  </Link>
+                )}
+
+                {!user?.isGuest && (
+                  <Link
+                    to="/updates"
+                    className={`flex items-center px-4 py-2 rounded-md ${isActive('/updates')}`}
+                    onClick={handleMenuClick}
+                  >
+                    <FaBullhorn className="mr-3" size={18} />
+                    Important Updates
                   </Link>
                 )}
 

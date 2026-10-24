@@ -70,10 +70,8 @@ router.put('/admin/reset-password', auth, adminAuth, async (req, res) => {
   }
 });
 
-// Email a 6-digit reset code (response is the same whether or not the account exists)
+// Email a 6-digit reset code to a registered email
 router.post('/forgot-password', authLimiter, async (req, res) => {
-  const genericMessage = 'If an account with this email exists, a verification code has been sent.';
-
   try {
     const email = normalizeEmail(req.body.email);
     if (!email) {
@@ -82,31 +80,38 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
     const user = await findUserByEmail(email);
 
-    if (user && user.isActive !== 'No') {
-      const otp = crypto.randomInt(100000, 1000000).toString();
-
-      await User.updateOne(
-        { _id: user._id },
-        {
-          resetOtpHash: hashOtp(user._id, otp),
-          resetOtpExpires: new Date(Date.now() + OTP_TTL_MS),
-          resetOtpAttempts: 0
-        }
-      );
-
-      try {
-        await sendEmail(
-          user.email,
-          'Your password reset code',
-          `Your password reset code is ${otp}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
-          `<p>Your password reset code is <strong style="font-size:20px">${otp}</strong>.</p><p>It expires in 10 minutes. If you did not request this, you can ignore this email.</p>`
-        );
-      } catch (mailErr) {
-        console.error('Failed to send reset code:', mailErr.message);
-      }
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email' });
     }
 
-    res.json({ message: genericMessage });
+    if (user.isActive === 'No') {
+      return res.status(403).json({ message: 'Your account has been deactivated. Please contact admin.' });
+    }
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        resetOtpHash: hashOtp(user._id, otp),
+        resetOtpExpires: new Date(Date.now() + OTP_TTL_MS),
+        resetOtpAttempts: 0
+      }
+    );
+
+    try {
+      await sendEmail(
+        user.email,
+        'Your password reset code',
+        `Dear ${user.name},\n\nWe received a request to reset the password for your account linked to mobile number ${user.mobileNumber}.\n\nYour password reset code is ${otp}. It expires in 10 minutes.\n\nIf you did not request this, you can ignore this email.`,
+        `<p>Dear <strong>${user.name}</strong>,</p><p>We received a request to reset the password for your account linked to mobile number <strong>${user.mobileNumber}</strong>.</p><p>Your password reset code is <strong style="font-size:20px">${otp}</strong>. It expires in 10 minutes.</p><p>If you did not request this, you can ignore this email.</p>`
+      );
+    } catch (mailErr) {
+      console.error('Failed to send reset code:', mailErr.message);
+      return res.status(500).json({ message: 'Could not send the verification code. Please try again.' });
+    }
+
+    res.json({ message: 'A verification code has been sent to your email.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

@@ -17,6 +17,8 @@ const shareRoutes = require('./routes/share');
 const weatherRoutes = require('./routes/weather');
 const eventsRoutes = require('./routes/events');
 const documentRoutes = require('./routes/documents');
+const updateRoutes = require('./routes/updates');
+const pushRoutes = require('./routes/push');
 
 dotenv.config();
 const app = express();
@@ -103,6 +105,8 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/loadweather', weatherRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/updates', updateRoutes);
+app.use('/api/push', pushRoutes);
 // Share pages for social previews (HTML with OG tags)
 app.use('/share', shareRoutes);
 
