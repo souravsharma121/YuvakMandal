@@ -57,6 +57,7 @@ import InitiativeDetail from './components/gallery/InitiativeDetail';
 // Documents Component
 import ImportantDocuments from './components/documents/ImportantDocuments';
 import ImportantUpdates from './components/updates/ImportantUpdates';
+import NotificationGate from './components/notifications/NotificationGate';
 
 // Weather Component 
 import Weather from './weather/Weather';
@@ -131,6 +132,7 @@ function App() {
           <ContributionProvider>
             <EventProvider> {/* Add EventProvider wrapper */}
               <Router>
+                <NotificationGate />
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />

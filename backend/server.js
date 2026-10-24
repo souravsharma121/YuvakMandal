@@ -27,7 +27,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middleware
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://yuvakmandalapp.vercel.app')
   .split(',')
   .map(origin => origin.trim());
 
